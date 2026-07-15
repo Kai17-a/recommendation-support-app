@@ -328,7 +328,6 @@ class MarkdownImport(Base):
     project_report_id: Mapped[UUID | None] = mapped_column(ForeignKey("project_reports.id"))
     original_file_name: Mapped[str] = mapped_column(String(255))
     content_hash: Mapped[str] = mapped_column(String(64))
-    raw_content: Mapped[str | None] = mapped_column(Text)
     file_storage_key: Mapped[str | None] = mapped_column(String(2048))
     file_retained: Mapped[bool] = mapped_column(Boolean)
     template_version: Mapped[str] = mapped_column(String(100))

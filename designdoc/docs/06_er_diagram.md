@@ -190,7 +190,6 @@ erDiagram
         uuid project_report_id FK
         string original_file_name
         string content_hash
-        text raw_content
         string file_storage_key
         boolean file_retained
         string template_version

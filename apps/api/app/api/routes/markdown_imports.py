@@ -11,12 +11,17 @@ from app.markdown_imports.schemas import (
     MarkdownWarningUpdate,
 )
 from app.markdown_imports.service import MarkdownImportService
+from app.markdown_imports.storage import get_markdown_object_storage
 
 router = APIRouter(tags=["markdown-imports"])
 
 
 def get_markdown_import_service(session: Session = Depends(get_session)) -> MarkdownImportService:
-    return MarkdownImportService(session, DramatiqAiJobDispatcher())
+    return MarkdownImportService(
+        session,
+        DramatiqAiJobDispatcher(),
+        get_markdown_object_storage(),
+    )
 
 
 @router.post(

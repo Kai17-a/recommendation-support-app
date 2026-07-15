@@ -24,6 +24,20 @@ from app.markdown_imports.parser import parse_markdown
 from app.markdown_imports.service import MarkdownImportService
 
 
+class MemoryStorage:
+    def __init__(self) -> None:
+        self.objects: dict[str, bytes] = {}
+
+    def put(self, key: str, data: bytes) -> None:
+        self.objects[key] = data
+
+    def get(self, key: str) -> bytes:
+        return self.objects[key]
+
+    def delete(self, key: str) -> None:
+        self.objects.pop(key, None)
+
+
 class RecordingDispatcher:
     def __init__(self) -> None:
         self.jobs: list[UUID] = []
@@ -41,13 +55,16 @@ def anyio_backend() -> str:
 
 
 @pytest.fixture
-def context() -> Generator[tuple[sessionmaker[Session], UUID, UUID, RecordingDispatcher]]:
+def context() -> Generator[
+    tuple[sessionmaker[Session], UUID, UUID, RecordingDispatcher, MemoryStorage]
+]:
     engine = create_engine(
         "sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool
     )
     Base.metadata.create_all(engine)
     factory = sessionmaker(engine, expire_on_commit=False)
     dispatcher = RecordingDispatcher()
+    storage = MemoryStorage()
     with factory() as session:
         department = Department(name="開発", code="dev")
         session.add(department)
@@ -76,16 +93,16 @@ def context() -> Generator[tuple[sessionmaker[Session], UUID, UUID, RecordingDis
 
     def override() -> Generator[MarkdownImportService]:
         with factory() as session:
-            yield MarkdownImportService(session, dispatcher)
+            yield MarkdownImportService(session, dispatcher, storage)
 
     app.dependency_overrides[get_markdown_import_service] = override
-    yield factory, member_id, project_id, dispatcher
+    yield factory, member_id, project_id, dispatcher, storage
     app.dependency_overrides.clear()
 
 
 @pytest.mark.anyio
 async def test_markdown_import_lifecycle(context) -> None:
-    factory, member_id, project_id, dispatcher = context
+    factory, member_id, project_id, dispatcher, storage = context
     content = """# 案件報告
 ## メンバー名
 山田 太郎
@@ -113,6 +130,7 @@ async def test_markdown_import_lifecycle(context) -> None:
         body = response.json()
         assert body["status"] == "queued"
         assert len(dispatcher.jobs) == 1
+        assert list(storage.objects.values()) == [content.encode()]
 
         fetched = await client.get(f"/api/v1/markdown-imports/{body['import_id']}")
         assert fetched.status_code == 200
@@ -141,7 +159,7 @@ async def test_markdown_import_lifecycle(context) -> None:
 
 @pytest.mark.anyio
 async def test_rejects_invalid_and_duplicate_files(context) -> None:
-    _, member_id, project_id, _ = context
+    _, member_id, project_id, _, _ = context
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         invalid = await client.post(

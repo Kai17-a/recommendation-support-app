@@ -22,6 +22,7 @@ from app.infrastructure.models import (
     Skill,
 )
 from app.markdown_imports.parser import ParsedWarning, parse_markdown
+from app.markdown_imports.storage import get_markdown_object_storage
 
 
 @dramatiq.actor(max_retries=0, queue_name="ai")
@@ -38,7 +39,11 @@ def run_markdown_import(job_id: str) -> None:
         imported.import_status = "running"
         session.commit()
         try:
-            parsed = parse_markdown(imported.raw_content or "")
+            if not imported.file_storage_key:
+                raise RuntimeError("Markdown object storage key is missing")
+            storage = get_markdown_object_storage()
+            content = storage.get(imported.file_storage_key).decode("utf-8")
+            parsed = parse_markdown(content)
             project = session.get(ProjectExperience, imported.project_experience_id)
             member = session.get(Member, imported.member_id)
             assert project is not None and member is not None
@@ -90,7 +95,7 @@ def run_markdown_import(job_id: str) -> None:
                     )
                 )
             _save_technology_skills(session, imported, report, parsed.technologies)
-            _run_ai_assistance(session, job, imported)
+            _run_ai_assistance(session, job, imported, content)
             warning_exists = (
                 bool(warnings)
                 or session.scalar(
@@ -102,7 +107,8 @@ def run_markdown_import(job_id: str) -> None:
             )
             imported.import_status = "completed_with_warnings" if warning_exists else "completed"
             if not imported.file_retained:
-                imported.raw_content = None
+                storage.delete(imported.file_storage_key)
+                imported.file_storage_key = None
             job.status = "completed"
             job.completed_at = datetime.now(UTC)
             job.error_message = None
@@ -121,7 +127,7 @@ def run_markdown_import(job_id: str) -> None:
             raise
 
 
-def _run_ai_assistance(session, job: AiJob, imported: MarkdownImport) -> None:
+def _run_ai_assistance(session, job: AiJob, imported: MarkdownImport, content: str) -> None:
     setting = session.scalar(select(AiSetting).order_by(AiSetting.updated_at.desc()))
     if setting is None:
         _ai_warning(session, imported, "AI設定がないため決定的パーサーの結果だけを保存しました。")
@@ -143,7 +149,7 @@ def _run_ai_assistance(session, job: AiJob, imported: MarkdownImport) -> None:
                 },
                 {
                     "role": "user",
-                    "content": json.dumps({"markdown": imported.raw_content}, ensure_ascii=False),
+                    "content": json.dumps({"markdown": content}, ensure_ascii=False),
                 },
             ],
         )
@@ -157,7 +163,7 @@ def _run_ai_assistance(session, job: AiJob, imported: MarkdownImport) -> None:
                 prompt_version=setting.prompt_version,
                 analysis_result=result,
                 evidence_map=result.get("evidence_map", {}),
-                source_snapshot=imported.raw_content or "",
+                source_snapshot=content,
                 executed_at=datetime.now(UTC),
             )
         )

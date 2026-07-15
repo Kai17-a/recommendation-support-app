@@ -1,7 +1,7 @@
 import hashlib
 from datetime import UTC, datetime
 from pathlib import PurePath
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
@@ -18,16 +18,21 @@ from app.infrastructure.models import (
     ProjectExperience,
 )
 from app.markdown_imports.schemas import MarkdownImportResponse, MarkdownWarningUpdate
+from app.markdown_imports.storage import MarkdownObjectStorage
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
 class MarkdownImportService:
     def __init__(
-        self, session: Session, dispatcher: MarkdownImportDispatcher | None = None
+        self,
+        session: Session,
+        dispatcher: MarkdownImportDispatcher | None = None,
+        storage: MarkdownObjectStorage | None = None,
     ) -> None:
         self.session = session
         self.dispatcher = dispatcher
+        self.storage = storage
 
     def create(
         self, project_id: UUID, member_id: UUID, filename: str | None, data: bytes, retain: bool
@@ -66,7 +71,7 @@ class MarkdownImportService:
                 message="ファイルが空、上限超過、またはバイナリです。",
             )
         try:
-            content = data.decode("utf-8")
+            data.decode("utf-8")
         except UnicodeDecodeError as error:
             raise ApiError(
                 status_code=422,
@@ -74,13 +79,15 @@ class MarkdownImportService:
                 message="UTF-8のMarkdownを指定してください。",
             ) from error
         digest = hashlib.sha256(data).hexdigest()
+        import_id = uuid4()
+        storage_key = f"markdown-imports/{import_id}/{digest}.md"
         row = MarkdownImport(
+            id=import_id,
             member_id=member_id,
             project_experience_id=project_id,
             original_file_name=name,
             content_hash=digest,
-            raw_content=content,
-            file_storage_key=None,
+            file_storage_key=storage_key,
             file_retained=retain,
             template_version="1",
             import_status="queued",
@@ -96,6 +103,14 @@ class MarkdownImportService:
                 code="DUPLICATE_IMPORT",
                 message="同一内容のMarkdownは取り込み済みです。",
             ) from error
+        if self.storage is None:
+            self.session.rollback()
+            raise RuntimeError("Markdown object storage is not configured")
+        try:
+            self.storage.put(storage_key, data)
+        except Exception:
+            self.session.rollback()
+            raise
         job = AiJob(
             job_type="markdown_import",
             target_type="markdown_import",
@@ -105,7 +120,12 @@ class MarkdownImportService:
             retry_count=0,
         )
         self.session.add(job)
-        self.session.commit()
+        try:
+            self.session.commit()
+        except Exception:
+            self.session.rollback()
+            self.storage.delete(storage_key)
+            raise
         if self.dispatcher:
             self.dispatcher.enqueue_markdown_import(job.id)
         return self._response(row, job)
