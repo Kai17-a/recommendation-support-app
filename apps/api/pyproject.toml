@@ -29,6 +29,10 @@ dev = [
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 pythonpath = ["."]
+addopts = "-m 'not integration'"
+markers = [
+  "integration: Docker Compose上の実サービスを使用する結合テスト",
+]
 
 [tool.ruff]
 line-length = 100

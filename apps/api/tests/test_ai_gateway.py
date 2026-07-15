@@ -259,7 +259,7 @@ def test_recommendation_orchestrator_saves_version_evidence_and_metadata() -> No
             department_id=UUID("00000000-0000-0000-0000-000000000002"),
             manager_user_id=UUID("00000000-0000-0000-0000-000000000003"),
             name="佐藤 花子",
-            status="ACTIVE",
+            status="active",
         )
         session.add(member)
         session.flush()
