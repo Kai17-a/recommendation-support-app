@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from uuid import UUID
 
 import httpx
@@ -65,19 +65,19 @@ def member_id() -> Generator[str]:
         session.commit()
         created_member_id = str(member.id)
 
-    def override_service() -> Generator[ProjectService]:
+    async def override_service() -> AsyncGenerator[ProjectService]:
         with session_factory() as session:
             yield ProjectService(session)
 
-    def override_report_service() -> Generator[ReportService]:
+    async def override_report_service() -> AsyncGenerator[ReportService]:
         with session_factory() as session:
             yield ReportService(session)
 
-    def override_evaluation_service() -> Generator[EvaluationService]:
+    async def override_evaluation_service() -> AsyncGenerator[EvaluationService]:
         with session_factory() as session:
             yield EvaluationService(session)
 
-    def override_skill_service() -> Generator[SkillService]:
+    async def override_skill_service() -> AsyncGenerator[SkillService]:
         with session_factory() as session:
             yield SkillService(session)
 

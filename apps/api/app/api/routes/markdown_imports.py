@@ -45,7 +45,7 @@ async def create_markdown_import(
 
 
 @router.get("/api/v1/markdown-imports/{import_id}", response_model=MarkdownImportResponse)
-def get_markdown_import(
+async def get_markdown_import(
     import_id: UUID, service: MarkdownImportService = Depends(get_markdown_import_service)
 ) -> MarkdownImportResponse:
     return service.get(import_id)
@@ -54,7 +54,7 @@ def get_markdown_import(
 @router.get(
     "/api/v1/markdown-imports/{import_id}/warnings", response_model=list[MarkdownWarningResponse]
 )
-def list_markdown_import_warnings(
+async def list_markdown_import_warnings(
     import_id: UUID, service: MarkdownImportService = Depends(get_markdown_import_service)
 ) -> list[MarkdownWarningResponse]:
     return [MarkdownWarningResponse.model_validate(row) for row in service.warnings(import_id)]
@@ -63,7 +63,7 @@ def list_markdown_import_warnings(
 @router.patch(
     "/api/v1/markdown-import-warnings/{warning_id}", response_model=MarkdownWarningResponse
 )
-def update_markdown_import_warning(
+async def update_markdown_import_warning(
     warning_id: UUID,
     command: MarkdownWarningUpdate,
     service: MarkdownImportService = Depends(get_markdown_import_service),

@@ -18,23 +18,27 @@ from app.infrastructure.database import get_session
 from app.security.authentication import CurrentUser, get_current_user
 from app.security.authorization import AccessControl
 
-router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
-
-def get_admin_service(
+def require_admin(
     session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
-) -> AdminService:
+) -> None:
     AccessControl(session, user).require_system_operator()
+
+
+router = APIRouter(prefix="/api/v1/admin", tags=["admin"], dependencies=[Depends(require_admin)])
+
+
+def get_admin_service(session: Session = Depends(get_session)) -> AdminService:
     return AdminService(session)
 
 
 @router.get("/ai-settings", response_model=AiSettingResponse)
-def get_ai_setting(service: AdminService = Depends(get_admin_service)) -> AiSettingResponse:
+async def get_ai_setting(service: AdminService = Depends(get_admin_service)) -> AiSettingResponse:
     return AiSettingResponse.model_validate(service.get_ai_setting())
 
 
 @router.patch("/ai-settings", response_model=AiSettingResponse)
-def update_ai_setting(
+async def update_ai_setting(
     command: AiSettingUpdate,
     service: AdminService = Depends(get_admin_service),
 ) -> AiSettingResponse:
@@ -42,7 +46,7 @@ def update_ai_setting(
 
 
 @router.get("/retention-policies", response_model=list[RetentionPolicyResponse])
-def list_retention_policies(
+async def list_retention_policies(
     service: AdminService = Depends(get_admin_service),
 ) -> Sequence[RetentionPolicyResponse]:
     return [
@@ -52,7 +56,7 @@ def list_retention_policies(
 
 
 @router.patch("/retention-policies/{policy_id}", response_model=RetentionPolicyResponse)
-def update_retention_policy(
+async def update_retention_policy(
     policy_id: UUID,
     command: RetentionPolicyUpdate,
     service: AdminService = Depends(get_admin_service),
@@ -62,7 +66,7 @@ def update_retention_policy(
 
 
 @router.get("/audit-logs", response_model=list[AuditLogResponse])
-def list_audit_logs(
+async def list_audit_logs(
     target_type: str | None = None,
     target_id: UUID | None = None,
     service: AdminService = Depends(get_admin_service),
@@ -74,7 +78,7 @@ def list_audit_logs(
 
 
 @router.get("/deleted-records", response_model=list[DeletedRecordResponse])
-def list_deleted_records(
+async def list_deleted_records(
     target_type: str | None = None,
     service: AdminService = Depends(get_admin_service),
 ) -> Sequence[DeletedRecordResponse]:
@@ -85,7 +89,7 @@ def list_deleted_records(
 
 
 @router.post("/deleted-records/{target_type}/{target_id}/restore", response_model=AuditLogResponse)
-def restore_deleted_record(
+async def restore_deleted_record(
     target_type: str,
     target_id: UUID,
     service: AdminService = Depends(get_admin_service),
@@ -94,7 +98,7 @@ def restore_deleted_record(
 
 
 @router.post("/deleted-records/{target_type}/{target_id}/purge", response_model=AuditLogResponse)
-def purge_deleted_record(
+async def purge_deleted_record(
     target_type: str,
     target_id: UUID,
     command: PurgeRequest,

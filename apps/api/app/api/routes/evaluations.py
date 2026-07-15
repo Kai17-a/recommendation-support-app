@@ -19,7 +19,7 @@ def service(
 
 
 @router.get("/api/v1/members/{member_id}/evaluations", response_model=list[EvaluationResponse])
-def list_evaluations(
+async def list_evaluations(
     member_id: UUID, app_service: EvaluationService = Depends(service)
 ) -> list[EvaluationResponse]:
     return [EvaluationResponse.model_validate(x) for x in app_service.list_for_member(member_id)]
@@ -30,14 +30,14 @@ def list_evaluations(
     response_model=EvaluationResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_evaluation(
+async def create_evaluation(
     member_id: UUID, command: EvaluationCreate, app_service: EvaluationService = Depends(service)
 ) -> EvaluationResponse:
     return EvaluationResponse.model_validate(app_service.create(member_id, command))
 
 
 @router.patch("/api/v1/evaluations/{evaluation_id}", response_model=EvaluationResponse)
-def update_evaluation(
+async def update_evaluation(
     evaluation_id: UUID,
     command: EvaluationUpdate,
     app_service: EvaluationService = Depends(service),
@@ -46,7 +46,7 @@ def update_evaluation(
 
 
 @router.delete("/api/v1/evaluations/{evaluation_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_evaluation(
+async def delete_evaluation(
     evaluation_id: UUID, app_service: EvaluationService = Depends(service)
 ) -> Response:
     app_service.delete(evaluation_id)

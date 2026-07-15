@@ -38,15 +38,17 @@ def retention_policy_id() -> Generator[str]:
         session.commit()
         policy_id = str(policy.id)
 
-    def override_service() -> Generator[AdminService]:
-        with session_factory() as session:
-            yield AdminService(session)
+    service_session = session_factory()
+
+    async def override_service() -> AdminService:
+        return AdminService(service_session)
 
     app.dependency_overrides[get_admin_service] = override_service
     try:
         yield policy_id
     finally:
         app.dependency_overrides.clear()
+        service_session.close()
         Base.metadata.drop_all(engine)
         engine.dispose()
 

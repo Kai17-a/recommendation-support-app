@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from uuid import UUID
 
 import httpx
@@ -61,7 +61,7 @@ def recommendation_test_database() -> Generator[tuple[str, sessionmaker[Session]
         session.commit()
         member_id = str(member.id)
 
-    def override_service() -> Generator[RecommendationService]:
+    async def override_service() -> AsyncGenerator[RecommendationService]:
         with session_factory() as session:
             yield RecommendationService(session)
 

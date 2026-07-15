@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from datetime import UTC, datetime
 
 import httpx
@@ -85,7 +85,7 @@ def deleted_records() -> Generator[dict[str, str]]:
         session.commit()
         ids = {"member": str(member.id), "report": str(report.id)}
 
-    def override() -> Generator[AdminService]:
+    async def override() -> AsyncGenerator[AdminService]:
         with factory() as session:
             yield AdminService(session)
 

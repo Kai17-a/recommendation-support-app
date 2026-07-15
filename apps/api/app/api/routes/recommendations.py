@@ -28,53 +28,55 @@ def svc(s: Session = Depends(get_session), user: CurrentUser = Depends(get_curre
 
 
 @router.get("", response_model=list[RecommendationResponse])
-def list_(x: RecommendationService = Depends(svc)):
+async def list_(x: RecommendationService = Depends(svc)):
     return x.list()
 
 
 @router.post("", response_model=RecommendationResponse, status_code=status.HTTP_201_CREATED)
-def create(c: RecommendationCreate, x: RecommendationService = Depends(svc)):
+async def create(c: RecommendationCreate, x: RecommendationService = Depends(svc)):
     return x.create(c)
 
 
 @router.get("/{id}", response_model=RecommendationResponse)
-def get(id: UUID, x: RecommendationService = Depends(svc)):
+async def get(id: UUID, x: RecommendationService = Depends(svc)):
     return x.get(id)
 
 
 @router.patch("/{id}", response_model=RecommendationResponse)
-def update(id: UUID, c: RecommendationUpdate, x: RecommendationService = Depends(svc)):
+async def update(id: UUID, c: RecommendationUpdate, x: RecommendationService = Depends(svc)):
     return x.update(id, c)
 
 
 @router.delete("/{id}", status_code=204)
-def delete(id: UUID, x: RecommendationService = Depends(svc)):
+async def delete(id: UUID, x: RecommendationService = Depends(svc)):
     x.delete(id)
     return Response(status_code=204)
 
 
 @router.post("/{id}/generate", response_model=AiJobResponse, status_code=status.HTTP_202_ACCEPTED)
-def generate(id: UUID, x: RecommendationService = Depends(svc)):
+async def generate(id: UUID, x: RecommendationService = Depends(svc)):
     return x.request_generation(id)
 
 
 @router.post("/{id}/finalize", response_model=RecommendationResponse)
-def finalize(id: UUID, command: RecommendationFinalize, x: RecommendationService = Depends(svc)):
+async def finalize(
+    id: UUID, command: RecommendationFinalize, x: RecommendationService = Depends(svc)
+):
     return x.finalize(id, command)
 
 
 @router.get("/{id}/versions", response_model=list[RecommendationVersionResponse])
-def list_versions(id: UUID, x: RecommendationService = Depends(svc)):
+async def list_versions(id: UUID, x: RecommendationService = Depends(svc)):
     return x.list_versions(id)
 
 
 @version_router.get("/{version_id}", response_model=RecommendationVersionResponse)
-def get_version(version_id: UUID, x: RecommendationService = Depends(svc)):
+async def get_version(version_id: UUID, x: RecommendationService = Depends(svc)):
     return x.get_version(version_id)
 
 
 @version_router.patch("/{version_id}", response_model=RecommendationVersionResponse)
-def update_version(
+async def update_version(
     version_id: UUID,
     command: RecommendationVersionUpdate,
     x: RecommendationService = Depends(svc),
@@ -83,5 +85,5 @@ def update_version(
 
 
 @version_router.get("/{version_id}/evidences", response_model=list[RecommendationEvidenceResponse])
-def list_version_evidences(version_id: UUID, x: RecommendationService = Depends(svc)):
+async def list_version_evidences(version_id: UUID, x: RecommendationService = Depends(svc)):
     return x.version_evidences(version_id)

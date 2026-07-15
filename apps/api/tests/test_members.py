@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from uuid import UUID
 
 import httpx
@@ -43,7 +43,7 @@ def member_references() -> Generator[dict[str, str]]:
         session.commit()
         references = {"department_id": str(department.id), "manager_user_id": str(manager.id)}
 
-    def override_service() -> Generator[MemberService]:
+    async def override_service() -> AsyncGenerator[MemberService]:
         with session_factory() as session:
             yield MemberService(session)
 

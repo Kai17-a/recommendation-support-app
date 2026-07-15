@@ -19,7 +19,7 @@ def get_project_service(
 
 
 @router.get("/api/v1/members/{member_id}/projects", response_model=list[ProjectResponse])
-def list_projects(
+async def list_projects(
     member_id: UUID, service: ProjectService = Depends(get_project_service)
 ) -> list[ProjectResponse]:
     projects = service.list_for_member(member_id)
@@ -31,7 +31,7 @@ def list_projects(
     response_model=ProjectResponse,
     status_code=status.HTTP_201_CREATED,
 )
-def create_project(
+async def create_project(
     member_id: UUID,
     command: ProjectCreate,
     service: ProjectService = Depends(get_project_service),
@@ -40,14 +40,14 @@ def create_project(
 
 
 @router.get("/api/v1/projects/{project_id}", response_model=ProjectResponse)
-def get_project(
+async def get_project(
     project_id: UUID, service: ProjectService = Depends(get_project_service)
 ) -> ProjectResponse:
     return ProjectResponse.model_validate(service.get_active(project_id))
 
 
 @router.patch("/api/v1/projects/{project_id}", response_model=ProjectResponse)
-def update_project(
+async def update_project(
     project_id: UUID,
     command: ProjectUpdate,
     service: ProjectService = Depends(get_project_service),
@@ -56,7 +56,7 @@ def update_project(
 
 
 @router.delete("/api/v1/projects/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_project(
+async def delete_project(
     project_id: UUID, service: ProjectService = Depends(get_project_service)
 ) -> Response:
     service.delete(project_id)

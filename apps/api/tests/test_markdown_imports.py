@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from uuid import UUID
 
 import httpx
@@ -91,7 +91,7 @@ def context() -> Generator[
         session.commit()
         member_id, project_id = member.id, project.id
 
-    def override() -> Generator[MarkdownImportService]:
+    async def override() -> AsyncGenerator[MarkdownImportService]:
         with factory() as session:
             yield MarkdownImportService(session, dispatcher, storage)
 

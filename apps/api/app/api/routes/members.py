@@ -19,33 +19,35 @@ def get_member_service(
 
 
 @router.get("", response_model=list[MemberResponse])
-def list_members(service: MemberService = Depends(get_member_service)) -> list[MemberResponse]:
+async def list_members(
+    service: MemberService = Depends(get_member_service),
+) -> list[MemberResponse]:
     return [MemberResponse.model_validate(member) for member in service.list_active()]
 
 
 @router.post("", response_model=MemberResponse, status_code=status.HTTP_201_CREATED)
-def create_member(
+async def create_member(
     command: MemberCreate, service: MemberService = Depends(get_member_service)
 ) -> MemberResponse:
     return MemberResponse.model_validate(service.create(command))
 
 
 @router.get("/{member_id}", response_model=MemberResponse)
-def get_member(
+async def get_member(
     member_id: UUID, service: MemberService = Depends(get_member_service)
 ) -> MemberResponse:
     return MemberResponse.model_validate(service.get_active(member_id))
 
 
 @router.patch("/{member_id}", response_model=MemberResponse)
-def update_member(
+async def update_member(
     member_id: UUID, command: MemberUpdate, service: MemberService = Depends(get_member_service)
 ) -> MemberResponse:
     return MemberResponse.model_validate(service.update(member_id, command))
 
 
 @router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_member(
+async def delete_member(
     member_id: UUID, service: MemberService = Depends(get_member_service)
 ) -> Response:
     service.delete(member_id)
@@ -53,7 +55,7 @@ def delete_member(
 
 
 @router.post("/{member_id}/restore", response_model=MemberResponse)
-def restore_member(
+async def restore_member(
     member_id: UUID, service: MemberService = Depends(get_member_service)
 ) -> MemberResponse:
     return MemberResponse.model_validate(service.restore(member_id))

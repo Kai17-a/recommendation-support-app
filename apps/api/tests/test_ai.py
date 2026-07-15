@@ -1,4 +1,4 @@
-from collections.abc import Generator
+from collections.abc import AsyncGenerator, Generator
 from datetime import UTC, datetime
 
 import httpx
@@ -97,7 +97,7 @@ def ai_records() -> Generator[dict[str, str]]:
         session.commit()
         ids = {"project_id": str(project.id), "analysis_id": str(analysis.id)}
 
-    def override_service() -> Generator[AiService]:
+    async def override_service() -> AsyncGenerator[AiService]:
         with session_factory() as session:
             yield AiService(session)
 
