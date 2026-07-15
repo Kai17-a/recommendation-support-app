@@ -1,0 +1,22 @@
+{
+  "name": "@recommendation-support/web",
+  "private": true,
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "test": "vitest run --passWithNoTests",
+    "typecheck": "nuxt typecheck"
+  },
+  "devDependencies": {
+    "@nuxt/eslint": "^1.8.0",
+    "@types/node": "^24.0.0",
+    "eslint": "^9.0.0",
+    "nuxt": "^4.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.0.0",
+    "vitest": "^3.0.0",
+    "vue-tsc": "^3.0.0"
+  }
+}

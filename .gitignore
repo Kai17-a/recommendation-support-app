@@ -1,0 +1,17 @@
+.env
+.env.*
+!.env.example
+
+node_modules/
+.nuxt/
+.output/
+coverage/
+
+.venv/
+__pycache__/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+*.log
