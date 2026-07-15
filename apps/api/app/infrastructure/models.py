@@ -136,3 +136,41 @@ class MemberEvaluation(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class Skill(Base):
+    __tablename__ = "skills"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    name: Mapped[str] = mapped_column(String(255), unique=True)
+    category: Mapped[str | None] = mapped_column(String(255))
+    description: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class MemberSkill(Base):
+    __tablename__ = "member_skills"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    member_id: Mapped[UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    skill_id: Mapped[UUID] = mapped_column(ForeignKey("skills.id"))
+    source_type: Mapped[str] = mapped_column(String(100))
+    status: Mapped[str] = mapped_column(String(100))
+    manager_comment: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class MemberSkillEvidence(Base):
+    __tablename__ = "member_skill_evidences"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    member_skill_id: Mapped[UUID] = mapped_column(ForeignKey("member_skills.id"), index=True)
+    source_type: Mapped[str] = mapped_column(String(100))
+    source_id: Mapped[UUID] = mapped_column(index=True)
+    evidence_text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
