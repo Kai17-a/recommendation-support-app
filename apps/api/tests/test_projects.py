@@ -7,8 +7,10 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
+from app.api.routes.evaluations import service as get_evaluation_service
 from app.api.routes.projects import get_project_service
 from app.api.routes.reports import get_report_service
+from app.evaluations.service import EvaluationService
 from app.infrastructure.models import (
     Base,
     Department,
@@ -69,8 +71,13 @@ def member_id() -> Generator[str]:
         with session_factory() as session:
             yield ReportService(session)
 
+    def override_evaluation_service() -> Generator[EvaluationService]:
+        with session_factory() as session:
+            yield EvaluationService(session)
+
     app.dependency_overrides[get_project_service] = override_service
     app.dependency_overrides[get_report_service] = override_report_service
+    app.dependency_overrides[get_evaluation_service] = override_evaluation_service
     try:
         yield created_member_id
     finally:
@@ -155,3 +162,25 @@ async def test_project_report_lifecycle(member_id: str) -> None:
         assert updated.json()["manager_comment"] == "確認済み"
         assert (await client.delete(f"/api/v1/reports/{report_id}")).status_code == 204
         assert (await client.get(f"/api/v1/reports/{report_id}")).status_code == 404
+
+
+@pytest.mark.anyio
+async def test_evaluation_lifecycle(member_id: str) -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        created = await client.post(
+            f"/api/v1/members/{member_id}/evaluations",
+            json={
+                "evaluation_type": "periodic",
+                "evaluation_date": "2026-04-30",
+                "strengths": "課題を整理した。",
+            },
+        )
+        assert created.status_code == 201
+        evaluation_id = created.json()["id"]
+        updated = await client.patch(
+            f"/api/v1/evaluations/{evaluation_id}", json={"leadership": "推進した。"}
+        )
+        assert updated.status_code == 200
+        assert updated.json()["leadership"] == "推進した。"
+        assert (await client.delete(f"/api/v1/evaluations/{evaluation_id}")).status_code == 204

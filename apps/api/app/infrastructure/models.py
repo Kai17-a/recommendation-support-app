@@ -112,3 +112,27 @@ class ProjectReport(Base):
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class MemberEvaluation(Base):
+    __tablename__ = "member_evaluations"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    member_id: Mapped[UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    project_experience_id: Mapped[UUID | None] = mapped_column(ForeignKey("project_experiences.id"))
+    evaluation_type: Mapped[str] = mapped_column(String(100))
+    period_from: Mapped[date | None] = mapped_column(Date)
+    period_to: Mapped[date | None] = mapped_column(Date)
+    evaluation_date: Mapped[date] = mapped_column(Date)
+    strengths: Mapped[str | None] = mapped_column(Text)
+    areas_for_improvement: Mapped[str | None] = mapped_column(Text)
+    leadership: Mapped[str | None] = mapped_column(Text)
+    communication: Mapped[str | None] = mapped_column(Text)
+    problem_solving: Mapped[str | None] = mapped_column(Text)
+    initiative: Mapped[str | None] = mapped_column(Text)
+    manager_comment: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
