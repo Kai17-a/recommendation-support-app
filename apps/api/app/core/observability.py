@@ -39,9 +39,17 @@ class RequestContextMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         supplied_id = request.headers.get("x-request-id", "")
         request_id = supplied_id if REQUEST_ID_PATTERN.fullmatch(supplied_id) else str(uuid4())
+        request.state.request_id = request_id
         started = time.perf_counter()
         content_length = request.headers.get("content-length")
-        if content_length and int(content_length) > settings.max_request_body_bytes:
+        try:
+            body_too_large = (
+                content_length is not None
+                and int(content_length) > settings.max_request_body_bytes
+            )
+        except ValueError:
+            body_too_large = True
+        if body_too_large:
             response = Response(status_code=413, content="Request body too large")
         else:
             response = await call_next(request)

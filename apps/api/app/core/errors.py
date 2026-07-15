@@ -25,7 +25,11 @@ class ApiError(Exception):
         self.details = dict(details or {})
 
 
-async def api_error_handler(_: Request, error: Exception) -> JSONResponse:
+def _request_id(request: Request) -> str:
+    return getattr(request.state, "request_id", str(uuid4()))
+
+
+async def api_error_handler(request: Request, error: Exception) -> JSONResponse:
     assert isinstance(error, ApiError)
     return JSONResponse(
         status_code=error.status_code,
@@ -34,13 +38,13 @@ async def api_error_handler(_: Request, error: Exception) -> JSONResponse:
                 "code": error.code,
                 "message": error.message,
                 "details": error.details,
-                "request_id": str(uuid4()),
+                "request_id": _request_id(request),
             }
         },
     )
 
 
-async def validation_error_handler(_: Request, error: Exception) -> JSONResponse:
+async def validation_error_handler(request: Request, error: Exception) -> JSONResponse:
     assert isinstance(error, RequestValidationError)
     return JSONResponse(
         status_code=422,
@@ -49,7 +53,7 @@ async def validation_error_handler(_: Request, error: Exception) -> JSONResponse
                 "code": "VALIDATION_ERROR",
                 "message": "入力内容が不正です。",
                 "details": {"errors": jsonable_encoder(error.errors())},
-                "request_id": str(uuid4()),
+                "request_id": _request_id(request),
             }
         },
     )

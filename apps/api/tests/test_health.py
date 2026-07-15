@@ -2,6 +2,7 @@ import httpx
 import pytest
 
 from app.api.routes import health
+from app.api.routes.members import get_member_service
 from app.main import app
 
 
@@ -44,3 +45,23 @@ async def test_request_size_limit() -> None:
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         response = await client.get("/health", headers={"content-length": "999999999"})
     assert response.status_code == 413
+
+
+@pytest.mark.anyio
+async def test_error_body_and_header_share_request_id() -> None:
+    async def override_service() -> None:
+        return None
+
+    app.dependency_overrides[get_member_service] = override_service
+    transport = httpx.ASGITransport(app=app)
+    try:
+        async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/api/v1/members/not-a-uuid", headers={"x-request-id": "trace-test-1"}
+            )
+    finally:
+        app.dependency_overrides.pop(get_member_service, None)
+
+    assert response.status_code == 422
+    assert response.headers["x-request-id"] == "trace-test-1"
+    assert response.json()["error"]["request_id"] == "trace-test-1"
