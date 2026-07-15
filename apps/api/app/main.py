@@ -4,6 +4,7 @@ from app.api.routes.admin import router as admin_router
 from app.api.routes.ai import router as ai_router
 from app.api.routes.evaluations import router as evaluations_router
 from app.api.routes.health import router as health_router
+from app.api.routes.markdown_imports import router as markdown_imports_router
 from app.api.routes.members import router as members_router
 from app.api.routes.projects import router as projects_router
 from app.api.routes.recommendations import (
@@ -28,6 +29,7 @@ app.include_router(admin_router)
 app.include_router(ai_router)
 app.include_router(evaluations_router)
 app.include_router(members_router)
+app.include_router(markdown_imports_router)
 app.include_router(projects_router)
 app.include_router(reports_router)
 app.include_router(skills_router)

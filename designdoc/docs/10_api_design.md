@@ -58,6 +58,10 @@ PATCH /api/v1/markdown-import-warnings/{warningId}
 
 `project_id`はURLパスを正とし、フォームでは受け取らない。解析は非同期で実行する。
 
+初期リリースでは、拡張子は`.md`、UTF-8テキスト、最大10 MiBとする。空ファイル、NUL文字を含むファイル、同一メンバー・案件への同一内容の再取り込みは拒否する。`retain_file`の既定値は`false`とし、`true`の場合だけ元本文を保持する。
+
+テンプレートは`designdoc/templates/project_report_template.md`の見出しを正とし、日付はISO 8601、報告種別は`periodic` / `final` / `ad_hoc`とする。警告の解決状態は`unresolved` / `resolved` / `ignored`とする。AI Gatewayが利用できない場合も決定的に抽出できた項目は保存し、警告付き完了とする。
+
 ### 受付レスポンス例
 
 ```json

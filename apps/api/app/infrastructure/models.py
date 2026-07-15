@@ -307,3 +307,48 @@ class AiSetting(Base):
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
     )
+
+
+class MarkdownImport(Base):
+    __tablename__ = "markdown_imports"
+    __table_args__ = (
+        Index(
+            "ix_markdown_imports_hash_member_project",
+            "content_hash",
+            "member_id",
+            "project_experience_id",
+            unique=True,
+        ),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    member_id: Mapped[UUID] = mapped_column(ForeignKey("members.id"))
+    project_experience_id: Mapped[UUID] = mapped_column(ForeignKey("project_experiences.id"))
+    project_report_id: Mapped[UUID | None] = mapped_column(ForeignKey("project_reports.id"))
+    original_file_name: Mapped[str] = mapped_column(String(255))
+    content_hash: Mapped[str] = mapped_column(String(64))
+    raw_content: Mapped[str | None] = mapped_column(Text)
+    file_storage_key: Mapped[str | None] = mapped_column(String(2048))
+    file_retained: Mapped[bool] = mapped_column(Boolean)
+    template_version: Mapped[str] = mapped_column(String(100))
+    import_status: Mapped[str] = mapped_column(String(100))
+    imported_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    imported_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class MarkdownImportWarning(Base):
+    __tablename__ = "markdown_import_warnings"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    markdown_import_id: Mapped[UUID] = mapped_column(ForeignKey("markdown_imports.id"), index=True)
+    warning_code: Mapped[str] = mapped_column(String(100))
+    field_name: Mapped[str | None] = mapped_column(String(100))
+    source_text: Mapped[str | None] = mapped_column(Text)
+    message: Mapped[str] = mapped_column(Text)
+    resolution_status: Mapped[str] = mapped_column(String(100))
+    resolved_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
