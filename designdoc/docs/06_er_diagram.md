@@ -243,6 +243,20 @@ erDiagram
         datetime deleted_at
     }
 
+    AI_SETTINGS {
+        uuid id PK
+        string provider
+        string base_url
+        string model
+        string api_key_secret_ref
+        int timeout_seconds
+        int max_retries
+        string prompt_version
+        uuid updated_by FK
+        datetime created_at
+        datetime updated_at
+    }
+
     AUDIT_LOGS {
         uuid id PK
         string target_type

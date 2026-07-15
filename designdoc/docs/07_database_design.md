@@ -84,6 +84,10 @@ Markdown取り込みの実行履歴を管理する。
 
 AI処理状態とAI出力を分離して管理する。
 
+### ai_settings
+
+AI GatewayのCustom Provider設定を管理する。APIキー本文は保存せず、Secret Manager等の参照名だけを保持する。
+
 ### audit_logs
 
 すべての主要な変更履歴を共通形式で保持する。

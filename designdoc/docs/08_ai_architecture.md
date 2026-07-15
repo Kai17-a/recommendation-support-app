@@ -61,6 +61,8 @@ AI Orchestratorは以下を担当する。
 - エラー変換
 - プロンプトバージョンの記録
 
+APIはAI実行を同期完了まで待機せず、`202 Accepted`で`ai_jobs`のIDを返す。呼び出し元はジョブ取得APIをポーリングして結果を取得する。
+
 ## 5. 専門コンポーネント
 
 ### Markdown Parser

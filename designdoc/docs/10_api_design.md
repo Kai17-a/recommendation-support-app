@@ -53,15 +53,30 @@ PATCH /api/v1/markdown-import-warnings/{warningId}
 `multipart/form-data`
 
 - `member_id`
-- `project_id`
 - `file`
 - `retain_file` 任意
 
-### レスポンス例
+`project_id`はURLパスを正とし、フォームでは受け取らない。解析は非同期で実行する。
+
+### 受付レスポンス例
 
 ```json
 {
   "import_id": "uuid",
+  "job_id": "uuid",
+  "status": "queued",
+  "project_report_id": null,
+  "warning_count": 0,
+  "extracted_skill_count": 0
+}
+```
+
+### 完了時の取得レスポンス例
+
+```json
+{
+  "import_id": "uuid",
+  "job_id": "uuid",
   "status": "completed_with_warnings",
   "project_report_id": "uuid",
   "warning_count": 2,
@@ -77,6 +92,8 @@ GET /api/v1/ai-jobs/{jobId}
 GET /api/v1/ai-analyses/{analysisId}
 PATCH /api/v1/ai-analyses/{analysisId}
 ```
+
+`POST /api/v1/projects/{projectId}/analyses` は `202 Accepted` でAIジョブを返す。
 
 ## 7. 人物評価API
 
@@ -114,6 +131,16 @@ POST /api/v1/recommendations/{recommendationId}/finalize
 GET /api/v1/recommendation-versions/{versionId}/evidences
 ```
 
+`POST /api/v1/recommendations/{recommendationId}/generate` は `202 Accepted` でAIジョブを返す。
+
+`POST /api/v1/recommendations/{recommendationId}/finalize` の本文は、上司が確定対象として選択した版を明示する。
+
+```json
+{
+  "version_id": "uuid"
+}
+```
+
 ## 10. 管理API
 
 ```http
@@ -128,6 +155,8 @@ GET /api/v1/admin/deleted-records
 POST /api/v1/admin/deleted-records/{targetType}/{targetId}/restore
 POST /api/v1/admin/deleted-records/{targetType}/{targetId}/purge
 ```
+
+AI設定の更新ではAPIキー本文を受け取らず、Secret参照名のみを更新する。
 
 ## 11. エラー形式
 
