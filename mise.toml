@@ -1,3 +1,5 @@
 [tools]
+codex = "latest"
 just = "latest"
 python = "3.14"
+zellij = "latest"
