@@ -56,6 +56,118 @@ mise exec -- just api-dev
 mise exec -- just web-dev
 ```
 
+## Dockerを使ったローカル起動
+
+通常のローカル開発では、PostgreSQL、Redis、MinIOをDocker Composeで起動し、
+API、非同期worker、Web UIはホスト上で起動します。`compose.production.yml`は本番構成例、
+`docker-compose.integration.yml`は自動結合試験専用なので、通常開発では直接使用しません。
+
+### 1. 設定と依存関係の準備
+
+```bash
+cp .env.example .env
+mise install
+mise exec -- just install
+```
+
+`.env`の既定値はローカルComposeのPostgreSQL、Redis、MinIOへ接続する設定です。
+APIを操作するには、利用するIdPに合わせて最低限次も設定してください。
+
+```dotenv
+OIDC_ISSUER_URL=https://idp.example.com/realms/example
+OIDC_AUDIENCE=recommendation-support-api
+```
+
+AI機能を使う場合は、管理APIのAI設定に保存するSecret参照名と同名の環境変数へ、
+AI Gatewayのキーを設定します。キー自体をAI設定APIやDBへ保存しないでください。
+
+### 2. Docker基盤の起動
+
+```bash
+docker compose up -d
+docker compose ps
+```
+
+`postgres`と`redis`が`healthy`、`minio`が`Up`、`minio-init`が正常終了すれば準備完了です。
+
+| サービス | ローカルURL・ポート |
+|---|---|
+| PostgreSQL | `localhost:5432` |
+| Redis | `localhost:6379` |
+| MinIO API | `http://localhost:9000` |
+| MinIO Console | `http://localhost:9001` |
+
+MinIO Consoleには、`.env`の`MINIO_ROOT_USER`と`MINIO_ROOT_PASSWORD`でログインできます。
+
+### 3. マイグレーションと初期操作者の登録
+
+```bash
+mise exec -- just db-migrate
+
+mise exec -- just bootstrap-user \
+  --department-code platform \
+  --department-name 'プラットフォーム部' \
+  --user-name 'ローカル運用者' \
+  --email operator@example.com \
+  --oidc-subject 'IdPが発行するsubクレーム値' \
+  --role system_operator \
+  --status active
+```
+
+`--oidc-subject`は、実際にローカル確認で使用するアクセストークンの`sub`と一致させます。
+
+### 4. API、worker、Web UIの起動
+
+3つのターミナルでそれぞれ実行します。
+
+```bash
+# Terminal 1: API
+mise exec -- just api-dev
+
+# Terminal 2: AI分析・推薦生成・Markdown取り込みworker
+mise exec -- uv run --directory apps/api \
+  dramatiq app.ai.tasks app.markdown_imports.tasks --processes 1 --threads 4
+
+# Terminal 3: Web UI
+NUXT_PUBLIC_API_BASE=http://localhost:8000 mise exec -- just web-dev
+```
+
+起動後のURL:
+
+- Web UI: `http://localhost:3000`
+- API liveness: `http://localhost:8000/health`
+- API readiness: `http://localhost:8000/ready`
+- Swagger UI: `http://localhost:8000/docs`
+
+Web UIでは、IdPから取得した短時間有効なアクセストークンを入力します。トークンはブラウザの
+`sessionStorage`だけに保存され、タブを閉じると破棄されます。
+
+### 5. Dockerだけで結合試験を実行する
+
+実IdPや実AI Gatewayを用意せず、Mock OIDC/JWKSとOpenAI互換Gatewayを含む一式を
+Docker上で確認する場合は、次を実行します。
+
+```bash
+./scripts/run-api-integration-tests.sh
+```
+
+このスクリプトは専用のPostgreSQL、Redis、MinIO、API、worker、Mockサービスを起動し、
+OIDC認証・部署認可・Markdown取り込み・AI分析・推薦文生成と確定・障害系を検証します。
+終了時には専用コンテナとボリュームを自動削除します。
+
+### 6. 停止とデータの初期化
+
+```bash
+# コンテナを停止する（データは保持）
+docker compose down
+
+# コンテナとローカルDB・MinIOデータを削除する
+docker compose down --volumes
+```
+
+`--volumes`を付けると登録データと保持中のMarkdown原本が削除されるため、必要な場合だけ
+実行してください。
+
 APIの稼働確認は以下で行えます。
 
 ```bash
