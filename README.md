@@ -232,3 +232,42 @@ bun run web:typecheck
 bun run web:test
 bun run --cwd apps/web build
 ```
+
+## CI/CDとリリース
+
+GitHub ActionsはPull Requestと`main`へのpushで、APIのテスト・Ruff・型検査、Webの
+テスト・ESLint・型検査・production build、Docker実サービス結合試験、本番APIイメージの
+buildを実行します。CodeQLは同じイベントと週次スケジュールで実行します。
+
+リリースはSemantic Versioning形式のタグをpushして作成します。
+
+```bash
+git tag -a v1.0.0 -m 'v1.0.0'
+git push origin v1.0.0
+```
+
+タグのcommitに対してCIがすべて成功すると、Release workflowが以下を配布します。
+
+- GHCR: `ghcr.io/<owner>/<repository>:1.0.0`、`:1.0`、`:1`、`:latest`
+- GitHub Release: Linux amd64 Docker image archive（`.docker.tar.zst`）
+- CycloneDX JSON SBOM
+- `SHA256SUMS`
+- GitHub Artifact Attestationによるimageと添付ファイルのprovenance
+
+GHCRから実行する例:
+
+```bash
+docker pull ghcr.io/<owner>/<repository>:1.0.0
+docker run --rm ghcr.io/<owner>/<repository>:1.0.0 python -m app.bootstrap.cli --help
+```
+
+GitHub ReleaseのDocker image archiveを読み込む例:
+
+```bash
+sha256sum --check SHA256SUMS
+unzstd recommendation-support-api-v1.0.0-linux-amd64.docker.tar.zst
+docker load --input recommendation-support-api-v1.0.0-linux-amd64.docker.tar
+```
+
+タグを付ける前に、対象commitが`main`へ統合済みで、branch protectionの必須CIが成功している
+ことを確認してください。workflowはタグ上でもCIを再実行してから配布します。
