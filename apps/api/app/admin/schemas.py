@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Literal
 from uuid import UUID
 
 from pydantic import AnyHttpUrl, BaseModel, ConfigDict, Field
@@ -27,7 +28,7 @@ class RetentionPolicyResponse(BaseModel):
 class AiSettingUpdate(BaseModel):
     model_config = ConfigDict(extra="forbid")
 
-    provider: str | None = None
+    provider: Literal["custom"] | None = None
     base_url: AnyHttpUrl | None = None
     model: str | None = None
     api_key_secret_ref: str | None = None

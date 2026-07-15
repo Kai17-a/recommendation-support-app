@@ -8,6 +8,9 @@ install:
 api-dev:
     uv run --directory apps/api uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
+ai-worker:
+    uv run --directory apps/api dramatiq app.ai.tasks --processes 1 --threads 4
+
 web-dev:
     bun run web:dev
 

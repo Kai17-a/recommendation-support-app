@@ -3,6 +3,7 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
+from app.ai.dispatcher import DramatiqAiJobDispatcher
 from app.ai.schemas import AiAnalysisResponse, AiAnalysisUpdate, AiJobResponse
 from app.ai.service import AiService
 from app.infrastructure.database import get_session
@@ -11,7 +12,7 @@ router = APIRouter(tags=["ai"])
 
 
 def get_ai_service(session: Session = Depends(get_session)) -> AiService:
-    return AiService(session)
+    return AiService(session, DramatiqAiJobDispatcher())
 
 
 @router.post(
