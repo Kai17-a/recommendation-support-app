@@ -8,6 +8,7 @@ from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
 
 from app.api.routes.projects import get_project_service
+from app.api.routes.reports import get_report_service
 from app.infrastructure.models import (
     Base,
     Department,
@@ -19,6 +20,7 @@ from app.infrastructure.models import (
 )
 from app.main import app
 from app.projects.service import ProjectService
+from app.reports.service import ReportService
 
 
 @pytest.fixture
@@ -63,7 +65,12 @@ def member_id() -> Generator[str]:
         with session_factory() as session:
             yield ProjectService(session)
 
+    def override_report_service() -> Generator[ReportService]:
+        with session_factory() as session:
+            yield ReportService(session)
+
     app.dependency_overrides[get_project_service] = override_service
+    app.dependency_overrides[get_report_service] = override_report_service
     try:
         yield created_member_id
     finally:
@@ -120,3 +127,31 @@ async def test_project_creation_rejects_unknown_member(member_id: str) -> None:
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "NOT_FOUND"
+
+
+@pytest.mark.anyio
+async def test_project_report_lifecycle(member_id: str) -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        project = await client.post(
+            f"/api/v1/members/{member_id}/projects",
+            json={"project_name": "推薦基盤構築", "status": "in_progress"},
+        )
+        project_id = project.json()["id"]
+        created = await client.post(
+            f"/api/v1/projects/{project_id}/reports",
+            json={
+                "report_type": "periodic",
+                "report_date": "2026-04-30",
+                "achievements": "API基盤を実装した。",
+            },
+        )
+        assert created.status_code == 201
+        report_id = created.json()["id"]
+        updated = await client.patch(
+            f"/api/v1/reports/{report_id}", json={"manager_comment": "確認済み"}
+        )
+        assert updated.status_code == 200
+        assert updated.json()["manager_comment"] == "確認済み"
+        assert (await client.delete(f"/api/v1/reports/{report_id}")).status_code == 204
+        assert (await client.get(f"/api/v1/reports/{report_id}")).status_code == 404
