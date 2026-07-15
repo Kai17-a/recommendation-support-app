@@ -67,6 +67,32 @@ OpenAPI仕様とSwagger UIは、API起動後に以下で確認できます。
 - `http://localhost:8000/openapi.json`
 - `http://localhost:8000/docs`
 
+## 初期部署・操作者の登録
+
+マイグレーション適用後、OIDCトークンを利用者へ紐付ける前に部署と操作者を登録します。
+コマンドは部署コードとメールアドレスをキーに冪等動作し、再実行時は名前、所属部署、
+ロール、状態、OIDC subjectを更新します。
+
+```bash
+mise exec -- just bootstrap-user \
+  --department-code platform \
+  --department-name 'プラットフォーム部' \
+  --user-name '運用管理者' \
+  --email operator@example.com \
+  --oidc-subject 'IdPのsubクレーム値' \
+  --role system_operator \
+  --status active
+```
+
+`--role`は`manager`または`system_operator`、`--status`は`active`または`inactive`です。
+部署コードは英数字で始まる100文字以内の英数字、`.`、`-`、`_`を使用します。
+ロールや所属の変更にも同じコマンドを使えます。OIDC subjectが別の操作者に登録済みの場合は
+更新せず失敗し、部署と操作者の変更は単一トランザクションで反映されます。
+
+このコマンドはアクセストークン、クライアントシークレット、パスワードを受け取らず、
+OIDC subjectやメールアドレスを標準出力へ表示しません。秘密情報は環境のSecret管理から
+アプリケーションへ渡し、コマンドライン引数やリポジトリへ保存しないでください。
+
 ローカル基盤を停止するには、次を実行します。
 
 ```bash

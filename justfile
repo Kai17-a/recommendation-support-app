@@ -23,6 +23,9 @@ infra-down:
 db-migrate:
     uv run --directory apps/api alembic upgrade head
 
+bootstrap-user *args:
+    uv run --directory apps/api python -m app.bootstrap.cli {{args}}
+
 lint:
     bun run web:lint
     uv run --directory apps/api ruff check .
