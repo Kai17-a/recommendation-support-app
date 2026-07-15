@@ -3,6 +3,8 @@ from typing import Any
 from uuid import uuid4
 
 from fastapi import Request
+from fastapi.encoders import jsonable_encoder
+from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 
 
@@ -32,6 +34,21 @@ async def api_error_handler(_: Request, error: Exception) -> JSONResponse:
                 "code": error.code,
                 "message": error.message,
                 "details": error.details,
+                "request_id": str(uuid4()),
+            }
+        },
+    )
+
+
+async def validation_error_handler(_: Request, error: Exception) -> JSONResponse:
+    assert isinstance(error, RequestValidationError)
+    return JSONResponse(
+        status_code=422,
+        content={
+            "error": {
+                "code": "VALIDATION_ERROR",
+                "message": "入力内容が不正です。",
+                "details": {"errors": jsonable_encoder(error.errors())},
                 "request_id": str(uuid4()),
             }
         },
