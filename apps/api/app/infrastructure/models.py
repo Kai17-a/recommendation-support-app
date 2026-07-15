@@ -2,7 +2,7 @@ from datetime import date, datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text, func
+from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -220,3 +220,19 @@ class RecommendationEvidence(Base):
     evidence_text: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class RetentionPolicy(Base):
+    __tablename__ = "retention_policies"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    target_type: Mapped[str] = mapped_column(String(100), unique=True)
+    retention_months: Mapped[int] = mapped_column(Integer)
+    purge_enabled: Mapped[bool] = mapped_column(Boolean)
+    require_manual_approval: Mapped[bool] = mapped_column(Boolean)
+    created_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    updated_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
