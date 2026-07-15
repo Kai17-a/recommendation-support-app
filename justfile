@@ -17,6 +17,9 @@ infra-up:
 infra-down:
     docker compose down
 
+db-migrate:
+    uv run --directory apps/api alembic upgrade head
+
 lint:
     bun run web:lint
     uv run --directory apps/api ruff check .

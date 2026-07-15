@@ -46,6 +46,9 @@ mise exec -- just install
 # PostgreSQL、Redis、MinIOを起動する
 mise exec -- just infra-up
 
+# DBマイグレーションを適用する
+mise exec -- just db-migrate
+
 # APIを起動する: http://localhost:8000
 mise exec -- just api-dev
 
