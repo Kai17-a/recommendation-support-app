@@ -10,6 +10,7 @@ from sqlalchemy.pool import StaticPool
 from app.api.routes.evaluations import service as get_evaluation_service
 from app.api.routes.projects import get_project_service
 from app.api.routes.reports import get_report_service
+from app.api.routes.skills import service as get_skill_service
 from app.evaluations.service import EvaluationService
 from app.infrastructure.models import (
     Base,
@@ -23,6 +24,7 @@ from app.infrastructure.models import (
 from app.main import app
 from app.projects.service import ProjectService
 from app.reports.service import ReportService
+from app.skills.service import SkillService
 
 
 @pytest.fixture
@@ -75,9 +77,14 @@ def member_id() -> Generator[str]:
         with session_factory() as session:
             yield EvaluationService(session)
 
+    def override_skill_service() -> Generator[SkillService]:
+        with session_factory() as session:
+            yield SkillService(session)
+
     app.dependency_overrides[get_project_service] = override_service
     app.dependency_overrides[get_report_service] = override_report_service
     app.dependency_overrides[get_evaluation_service] = override_evaluation_service
+    app.dependency_overrides[get_skill_service] = override_skill_service
     try:
         yield created_member_id
     finally:
@@ -184,3 +191,36 @@ async def test_evaluation_lifecycle(member_id: str) -> None:
         assert updated.status_code == 200
         assert updated.json()["leadership"] == "推進した。"
         assert (await client.delete(f"/api/v1/evaluations/{evaluation_id}")).status_code == 204
+
+
+@pytest.mark.anyio
+async def test_skill_lifecycle(member_id: str) -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        created = await client.post(
+            f"/api/v1/members/{member_id}/skills",
+            json={
+                "name": "FastAPI",
+                "category": "framework",
+                "source_type": "manager_input",
+                "status": "manager_confirmed",
+            },
+        )
+        assert created.status_code == 201
+        member_skill_id = created.json()["id"]
+
+        listed = await client.get(f"/api/v1/members/{member_id}/skills")
+        assert listed.status_code == 200
+        assert [skill["id"] for skill in listed.json()] == [member_skill_id]
+
+        evidences = await client.get(f"/api/v1/member-skills/{member_skill_id}/evidences")
+        assert evidences.status_code == 200
+        assert evidences.json() == []
+
+        updated = await client.patch(
+            f"/api/v1/member-skills/{member_skill_id}",
+            json={"status": "rejected", "manager_comment": "今回の推薦では使用しない。"},
+        )
+        assert updated.status_code == 200
+        assert updated.json()["status"] == "rejected"
+        assert (await client.delete(f"/api/v1/member-skills/{member_skill_id}")).status_code == 204
