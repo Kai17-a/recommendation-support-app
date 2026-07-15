@@ -6,7 +6,7 @@ from uuid import UUID
 
 import httpx
 import pytest
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, select
 from sqlalchemy.orm import Session
 
 from app.ai.gateway import (
@@ -14,13 +14,15 @@ from app.ai.gateway import (
     AiGatewayTimeout,
     OpenAiCompatibleGateway,
 )
-from app.ai.orchestrator import ProjectAnalysisOrchestrator
+from app.ai.orchestrator import ProjectAnalysisOrchestrator, RecommendationGenerationOrchestrator
 from app.infrastructure.models import (
     AiJob,
     AiSetting,
     Base,
     ProjectExperience,
     ProjectReport,
+    Recommendation,
+    RecommendationEvidence,
 )
 
 
@@ -209,6 +211,96 @@ def test_project_analysis_orchestrator_rejects_unknown_evidence() -> None:
         )
         with pytest.raises(AiGatewayOutputInvalid):
             ProjectAnalysisOrchestrator(session, gateway).execute(job)
+
+    Base.metadata.drop_all(engine)
+    engine.dispose()
+
+
+def test_recommendation_orchestrator_saves_version_evidence_and_metadata() -> None:
+    engine = create_engine("sqlite+pysqlite://")
+    Base.metadata.create_all(engine)
+    with Session(engine) as session:
+        project = ProjectExperience(
+            member_id=UUID("00000000-0000-0000-0000-000000000001"),
+            project_name="推薦基盤構築",
+            status="completed",
+        )
+        recommendation = Recommendation(
+            member_id=project.member_id,
+            purpose="顧客案件への推薦",
+            status="draft",
+        )
+        session.add_all([project, recommendation])
+        session.flush()
+        session.add_all(
+            [
+                ProjectReport(
+                    project_experience_id=project.id,
+                    report_type="final",
+                    report_date=date(2026, 7, 15),
+                    achievements="APIを実装した。",
+                ),
+                AiSetting(
+                    provider="custom",
+                    base_url="https://gateway.example.com/v1",
+                    model="recommendation-default",
+                    api_key_secret_ref="ai-gateway-key",
+                    timeout_seconds=30,
+                    max_retries=0,
+                    prompt_version="recommendation-v1",
+                ),
+            ]
+        )
+        # The FK is intentionally not enforced by this SQLite unit database.
+        from app.infrastructure.models import Member
+
+        member = Member(
+            id=project.member_id,
+            department_id=UUID("00000000-0000-0000-0000-000000000002"),
+            manager_user_id=UUID("00000000-0000-0000-0000-000000000003"),
+            name="佐藤 花子",
+            status="ACTIVE",
+        )
+        session.add(member)
+        session.flush()
+        report = session.scalar(select(ProjectReport))
+        assert report is not None
+        job = AiJob(
+            job_type="recommendation_generation",
+            target_type="recommendation",
+            target_id=recommendation.id,
+            status="running",
+            retry_count=0,
+        )
+        session.add(job)
+        session.flush()
+        gateway = FakeGateway(
+            {
+                "draft": [
+                    {
+                        "paragraph_no": 1,
+                        "text": "API実装経験があります。",
+                        "evidence": [
+                            {
+                                "source_type": "project_report",
+                                "source_id": str(report.id),
+                                "quote_or_summary": "APIを実装した。",
+                            }
+                        ],
+                    }
+                ],
+                "warnings": ["推薦先の詳細が不足しています。"],
+            }
+        )
+        analysis, version = RecommendationGenerationOrchestrator(session, gateway).execute(job)
+        assert analysis.model == "recommendation-default"
+        assert analysis.prompt_version == "recommendation-v1"
+        assert analysis.analysis_result["warnings"]
+        assert version.version_no == 1
+        assert version.content == "API実装経験があります。"
+        evidence = session.scalar(select(RecommendationEvidence))
+        assert evidence is not None
+        assert evidence.source_id == report.id
 
     Base.metadata.drop_all(engine)
     engine.dispose()

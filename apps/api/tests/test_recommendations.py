@@ -125,6 +125,33 @@ async def test_recommendation_version_and_evidence_lifecycle(
         assert updated.status_code == 200
         assert updated.json()["version_type"] == "manager_edited"
         assert updated.json()["content"] == "上司が確認して編集した推薦文です。"
+        assert updated.json()["id"] != version_id
+        assert updated.json()["version_no"] == 2
+
+        original = await client.get(f"/api/v1/recommendation-versions/{version_id}")
+        assert original.json()["content"] == "案件経験に基づく推薦文です。"
+        copied_evidence = await client.get(
+            f"/api/v1/recommendation-versions/{updated.json()['id']}/evidences"
+        )
+        assert len(copied_evidence.json()) == 1
+
+        generated = await client.post(f"/api/v1/recommendations/{recommendation_id}/generate")
+        assert generated.status_code == 202
+        assert generated.json()["job_type"] == "recommendation_generation"
+        assert generated.json()["status"] == "queued"
+
+        missing_version = await client.post(
+            f"/api/v1/recommendations/{recommendation_id}/finalize", json={}
+        )
+        assert missing_version.status_code == 422
+
+        finalized = await client.post(
+            f"/api/v1/recommendations/{recommendation_id}/finalize",
+            json={"version_id": updated.json()["id"]},
+        )
+        assert finalized.status_code == 200
+        assert finalized.json()["status"] == "manager_confirmed"
+        assert finalized.json()["finalized_at"] is not None
 
 
 @pytest.mark.anyio

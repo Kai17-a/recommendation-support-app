@@ -3,10 +3,13 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
+from app.ai.dispatcher import DramatiqAiJobDispatcher
+from app.ai.schemas import AiJobResponse
 from app.infrastructure.database import get_session
 from app.recommendations.schemas import (
     RecommendationCreate,
     RecommendationEvidenceResponse,
+    RecommendationFinalize,
     RecommendationResponse,
     RecommendationUpdate,
     RecommendationVersionResponse,
@@ -19,7 +22,7 @@ version_router = APIRouter(prefix="/api/v1/recommendation-versions", tags=["reco
 
 
 def svc(s: Session = Depends(get_session)):
-    return RecommendationService(s)
+    return RecommendationService(s, DramatiqAiJobDispatcher())
 
 
 @router.get("", response_model=list[RecommendationResponse])
@@ -46,6 +49,16 @@ def update(id: UUID, c: RecommendationUpdate, x: RecommendationService = Depends
 def delete(id: UUID, x: RecommendationService = Depends(svc)):
     x.delete(id)
     return Response(status_code=204)
+
+
+@router.post("/{id}/generate", response_model=AiJobResponse, status_code=status.HTTP_202_ACCEPTED)
+def generate(id: UUID, x: RecommendationService = Depends(svc)):
+    return x.request_generation(id)
+
+
+@router.post("/{id}/finalize", response_model=RecommendationResponse)
+def finalize(id: UUID, command: RecommendationFinalize, x: RecommendationService = Depends(svc)):
+    return x.finalize(id, command)
 
 
 @router.get("/{id}/versions", response_model=list[RecommendationVersionResponse])

@@ -44,6 +44,10 @@ class RecommendationVersionUpdate(BaseModel):
     content: str = Field(min_length=1)
 
 
+class RecommendationFinalize(BaseModel):
+    version_id: UUID
+
+
 class RecommendationVersionResponse(BaseModel):
     model_config = ConfigDict(from_attributes=True)
 

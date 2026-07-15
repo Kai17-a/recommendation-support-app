@@ -7,7 +7,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.ai.dispatcher import AiJobDispatcher
+from app.ai.dispatcher import MarkdownImportDispatcher
 from app.core.errors import ApiError
 from app.infrastructure.models import (
     AiJob,
@@ -23,7 +23,9 @@ MAX_FILE_SIZE = 10 * 1024 * 1024
 
 
 class MarkdownImportService:
-    def __init__(self, session: Session, dispatcher: AiJobDispatcher | None = None) -> None:
+    def __init__(
+        self, session: Session, dispatcher: MarkdownImportDispatcher | None = None
+    ) -> None:
         self.session = session
         self.dispatcher = dispatcher
 

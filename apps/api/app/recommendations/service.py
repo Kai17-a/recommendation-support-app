@@ -2,11 +2,13 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from uuid import UUID
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
+from app.ai.dispatcher import RecommendationGenerationDispatcher
 from app.core.errors import ApiError
 from app.infrastructure.models import (
+    AiJob,
     Member,
     Recommendation,
     RecommendationEvidence,
@@ -14,14 +16,16 @@ from app.infrastructure.models import (
 )
 from app.recommendations.schemas import (
     RecommendationCreate,
+    RecommendationFinalize,
     RecommendationUpdate,
     RecommendationVersionUpdate,
 )
 
 
 class RecommendationService:
-    def __init__(self, s: Session):
+    def __init__(self, s: Session, dispatcher: RecommendationGenerationDispatcher | None = None):
         self.s = s
+        self.dispatcher = dispatcher
 
     def list(self):
         return list(
@@ -92,12 +96,67 @@ class RecommendationService:
     def update_version(
         self, version_id: UUID, command: RecommendationVersionUpdate
     ) -> RecommendationVersion:
-        version = self.get_version(version_id)
-        version.content = command.content
-        version.version_type = "manager_edited"
+        source = self.get_version(version_id)
+        version = RecommendationVersion(
+            recommendation_id=source.recommendation_id,
+            version_no=self._next_version_no(source.recommendation_id),
+            version_type="manager_edited",
+            content=command.content,
+        )
+        self.s.add(version)
+        self.s.flush()
+        for evidence in self.version_evidences(source.id):
+            self.s.add(
+                RecommendationEvidence(
+                    recommendation_version_id=version.id,
+                    paragraph_no=evidence.paragraph_no,
+                    source_type=evidence.source_type,
+                    source_id=evidence.source_id,
+                    evidence_text=evidence.evidence_text,
+                )
+            )
         self.s.commit()
         self.s.refresh(version)
         return version
+
+    def request_generation(self, recommendation_id: UUID) -> AiJob:
+        self.get(recommendation_id)
+        job = AiJob(
+            job_type="recommendation_generation",
+            target_type="recommendation",
+            target_id=recommendation_id,
+            status="queued",
+            retry_count=0,
+        )
+        self.s.add(job)
+        self.s.commit()
+        self.s.refresh(job)
+        if self.dispatcher is not None:
+            self.dispatcher.enqueue_recommendation_generation(job.id)
+        return job
+
+    def finalize(self, recommendation_id: UUID, command: RecommendationFinalize) -> Recommendation:
+        recommendation = self.get(recommendation_id)
+        version = self.get_version(command.version_id)
+        if version.recommendation_id != recommendation.id:
+            raise ApiError(
+                status_code=422,
+                code="INVALID_VERSION",
+                message="確定対象の版はこの推薦プロジェクトに属していません。",
+            )
+        recommendation.status = "manager_confirmed"
+        recommendation.finalized_at = datetime.now(UTC)
+        self.s.commit()
+        self.s.refresh(recommendation)
+        return recommendation
+
+    def _next_version_no(self, recommendation_id: UUID) -> int:
+        current = self.s.scalar(
+            select(func.max(RecommendationVersion.version_no)).where(
+                RecommendationVersion.recommendation_id == recommendation_id
+            )
+        )
+        return (current or 0) + 1
 
     def version_evidences(self, version_id: UUID) -> Sequence[RecommendationEvidence]:
         self.get_version(version_id)

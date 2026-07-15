@@ -137,6 +137,8 @@ GET /api/v1/recommendation-versions/{versionId}/evidences
 
 `POST /api/v1/recommendations/{recommendationId}/generate` は `202 Accepted` でAIジョブを返す。
 
+`PATCH /api/v1/recommendation-versions/{versionId}` は元の版を上書きせず、上司編集版として新しいバージョンを作成して返す。元版に紐付く根拠参照は新しい版へ引き継ぐ。
+
 `POST /api/v1/recommendations/{recommendationId}/finalize` の本文は、上司が確定対象として選択した版を明示する。
 
 ```json

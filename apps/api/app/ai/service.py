@@ -3,14 +3,16 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.ai.dispatcher import AiJobDispatcher
+from app.ai.dispatcher import ProjectAnalysisDispatcher
 from app.ai.schemas import AiAnalysisUpdate
 from app.core.errors import ApiError
 from app.infrastructure.models import AiAnalysis, AiJob, ProjectExperience
 
 
 class AiService:
-    def __init__(self, session: Session, dispatcher: AiJobDispatcher | None = None) -> None:
+    def __init__(
+        self, session: Session, dispatcher: ProjectAnalysisDispatcher | None = None
+    ) -> None:
         self.session = session
         self.dispatcher = dispatcher
 
