@@ -1,8 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, Enum, ForeignKey, String, func
+from sqlalchemy import Date, DateTime, Enum, ForeignKey, String, Text, func
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -68,3 +68,22 @@ class Member(Base):
     )
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
     deleted_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+
+
+class ProjectExperience(Base):
+    __tablename__ = "project_experiences"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    member_id: Mapped[UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    project_name: Mapped[str] = mapped_column(String(255))
+    customer_name: Mapped[str | None] = mapped_column(String(255))
+    industry: Mapped[str | None] = mapped_column(String(255))
+    period_from: Mapped[date | None] = mapped_column(Date)
+    period_to: Mapped[date | None] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(String(100))
+    overview: Mapped[str | None] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
