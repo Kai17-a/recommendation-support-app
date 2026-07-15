@@ -19,15 +19,6 @@ DELETE /api/v1/members/{memberId}
 POST /api/v1/members/{memberId}/restore
 ```
 
-## 2.1 操作者API
-
-```http
-GET /api/v1/me
-```
-
-認証済み操作者のID、所属部署、ロール、表示名、メールアドレスを返す。Web UIはこのロールを用いて、
-許可されない業務API・管理APIを呼び出さない。
-
 ## 3. 案件経験API
 
 ```http
@@ -62,34 +53,15 @@ PATCH /api/v1/markdown-import-warnings/{warningId}
 `multipart/form-data`
 
 - `member_id`
+- `project_id`
 - `file`
 - `retain_file` 任意
 
-`project_id`はURLパスを正とし、フォームでは受け取らない。解析は非同期で実行する。
-
-初期リリースでは、拡張子は`.md`、UTF-8テキスト、最大10 MiBとする。空ファイル、NUL文字を含むファイル、同一メンバー・案件への同一内容の再取り込みは拒否する。`retain_file`の既定値は`false`とし、`true`の場合だけ元本文を保持する。
-
-テンプレートは`designdoc/templates/project_report_template.md`の見出しを正とし、日付はISO 8601、報告種別は`periodic` / `final` / `ad_hoc`とする。警告の解決状態は`unresolved` / `resolved` / `ignored`とする。AI Gatewayが利用できない場合も決定的に抽出できた項目は保存し、警告付き完了とする。
-
-### 受付レスポンス例
+### レスポンス例
 
 ```json
 {
   "import_id": "uuid",
-  "job_id": "uuid",
-  "status": "queued",
-  "project_report_id": null,
-  "warning_count": 0,
-  "extracted_skill_count": 0
-}
-```
-
-### 完了時の取得レスポンス例
-
-```json
-{
-  "import_id": "uuid",
-  "job_id": "uuid",
   "status": "completed_with_warnings",
   "project_report_id": "uuid",
   "warning_count": 2,
@@ -105,8 +77,6 @@ GET /api/v1/ai-jobs/{jobId}
 GET /api/v1/ai-analyses/{analysisId}
 PATCH /api/v1/ai-analyses/{analysisId}
 ```
-
-`POST /api/v1/projects/{projectId}/analyses` は `202 Accepted` でAIジョブを返す。
 
 ## 7. 人物評価API
 
@@ -144,18 +114,6 @@ POST /api/v1/recommendations/{recommendationId}/finalize
 GET /api/v1/recommendation-versions/{versionId}/evidences
 ```
 
-`POST /api/v1/recommendations/{recommendationId}/generate` は `202 Accepted` でAIジョブを返す。
-
-`PATCH /api/v1/recommendation-versions/{versionId}` は元の版を上書きせず、上司編集版として新しいバージョンを作成して返す。元版に紐付く根拠参照は新しい版へ引き継ぐ。
-
-`POST /api/v1/recommendations/{recommendationId}/finalize` の本文は、上司が確定対象として選択した版を明示する。
-
-```json
-{
-  "version_id": "uuid"
-}
-```
-
 ## 10. 管理API
 
 ```http
@@ -170,9 +128,6 @@ GET /api/v1/admin/deleted-records
 POST /api/v1/admin/deleted-records/{targetType}/{targetId}/restore
 POST /api/v1/admin/deleted-records/{targetType}/{targetId}/purge
 ```
-
-AI設定の更新ではAPIキー本文を受け取らず、Secret参照名のみを更新する。
-AI設定が未登録の場合、`GET /api/v1/admin/ai-settings`は`204 No Content`を返す。
 
 ## 11. エラー形式
 

@@ -76,12 +76,6 @@
 
 Markdown取り込みの実行履歴を管理する。
 
-原本本文はDBへ保存せず、非同期処理中は必ず `file_storage_key` が示すS3互換
-ストレージから取得する。保持指定がない場合は処理完了後にオブジェクトを削除し、
-`file_storage_key` をNULLへ更新する。
-既存の `raw_content` がある環境では、原本をオブジェクトストレージへ移送してキーを
-設定してから列廃止マイグレーションを適用し、移送漏れがある場合は適用を失敗させる。
-
 ### recommendations / recommendation_versions
 
 推薦プロジェクトと推薦文のバージョンを管理する。
@@ -89,10 +83,6 @@ Markdown取り込みの実行履歴を管理する。
 ### ai_jobs / ai_analyses
 
 AI処理状態とAI出力を分離して管理する。
-
-### ai_settings
-
-AI GatewayのCustom Provider設定を管理する。APIキー本文は保存せず、Secret Manager等の参照名だけを保持する。
 
 ### audit_logs
 

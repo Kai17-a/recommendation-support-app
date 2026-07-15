@@ -190,6 +190,7 @@ erDiagram
         uuid project_report_id FK
         string original_file_name
         string content_hash
+        text raw_content
         string file_storage_key
         boolean file_retained
         string template_version
@@ -240,20 +241,6 @@ erDiagram
         datetime executed_at
         datetime updated_at
         datetime deleted_at
-    }
-
-    AI_SETTINGS {
-        uuid id PK
-        string provider
-        string base_url
-        string model
-        string api_key_secret_ref
-        int timeout_seconds
-        int max_retries
-        string prompt_version
-        uuid updated_by FK
-        datetime created_at
-        datetime updated_at
     }
 
     AUDIT_LOGS {

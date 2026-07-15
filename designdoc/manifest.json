@@ -2,8 +2,11 @@
   "project": "recommendation-support-system",
   "encoding": "UTF-8",
   "language": "ja",
-  "file_count": 29,
+  "profile": "closed-network-prototype",
+  "file_count": 33,
   "files": [
+    ".env.example",
+    ".gitignore",
     "README.md",
     "adr/ADR-001-ai-policy.md",
     "adr/ADR-002-evidence-first.md",
@@ -16,6 +19,7 @@
     "adr/ADR-009-shared-audit-log.md",
     "adr/ADR-010-ai-gateway.md",
     "adr/ADR-011-specialized-ai-services.md",
+    "adr/ADR-012-minimum-security-for-closed-network-prototype.md",
     "docs/01_system_overview.md",
     "docs/02_requirements.md",
     "docs/03_business_flow.md",
@@ -30,6 +34,7 @@
     "docs/12_non_functional_requirements.md",
     "docs/13_glossary.md",
     "docs/14_future_features.md",
+    "manifest.json",
     "templates/evaluation_template.md",
     "templates/project_report_template.md",
     "templates/recommendation_input_template.md"
