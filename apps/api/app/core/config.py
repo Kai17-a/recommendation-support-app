@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     s3_markdown_bucket: str = "recommendation-support-markdown"
     s3_access_key_id: str | None = "minioadmin"
     s3_secret_access_key: str | None = "change-me-for-local-development"
+    s3_server_side_encryption: str | None = None
+    log_level: str = "INFO"
+    max_request_body_bytes: int = 12 * 1024 * 1024
 
 
 settings = Settings()

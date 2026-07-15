@@ -17,6 +17,9 @@ from app.api.routes.recommendations import (
 from app.api.routes.reports import router as reports_router
 from app.api.routes.skills import router as skills_router
 from app.core.errors import ApiError, api_error_handler, validation_error_handler
+from app.core.observability import RequestContextMiddleware, configure_logging
+
+configure_logging()
 
 app = FastAPI(
     title="推薦業務支援システム API",
@@ -26,6 +29,7 @@ app = FastAPI(
 
 app.add_exception_handler(ApiError, api_error_handler)
 app.add_exception_handler(RequestValidationError, validation_error_handler)
+app.add_middleware(RequestContextMiddleware)
 app.include_router(health_router)
 app.include_router(admin_router)
 app.include_router(ai_router)

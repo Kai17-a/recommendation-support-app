@@ -22,8 +22,10 @@ class S3MarkdownObjectStorage:
         region: str,
         access_key_id: str | None,
         secret_access_key: str | None,
+        server_side_encryption: str | None,
     ) -> None:
         self.bucket = bucket
+        self.server_side_encryption = server_side_encryption
         self.client = boto3.client(
             "s3",
             endpoint_url=endpoint_url,
@@ -33,11 +35,17 @@ class S3MarkdownObjectStorage:
         )
 
     def put(self, key: str, data: bytes) -> None:
+        encryption = (
+            {"ServerSideEncryption": self.server_side_encryption}
+            if self.server_side_encryption
+            else {}
+        )
         self.client.put_object(
             Bucket=self.bucket,
             Key=key,
             Body=data,
             ContentType="text/markdown; charset=utf-8",
+            **encryption,
         )
 
     def get(self, key: str) -> bytes:
@@ -55,4 +63,5 @@ def get_markdown_object_storage() -> MarkdownObjectStorage:
         region=settings.s3_region,
         access_key_id=settings.s3_access_key_id,
         secret_access_key=settings.s3_secret_access_key,
+        server_side_encryption=settings.s3_server_side_encryption,
     )
