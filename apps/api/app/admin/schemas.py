@@ -51,3 +51,30 @@ class AiSettingResponse(BaseModel):
     updated_by: UUID | None
     created_at: datetime
     updated_at: datetime
+
+
+class AuditLogResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    target_type: str
+    target_id: UUID
+    action: str
+    before_data: dict[str, object] | None
+    after_data: dict[str, object] | None
+    changed_fields: dict[str, object] | None
+    changed_by: UUID | None
+    request_id: UUID | None
+    reason: str | None
+    changed_at: datetime
+
+
+class DeletedRecordResponse(BaseModel):
+    target_type: str
+    target_id: UUID
+    deleted_at: datetime
+
+
+class PurgeRequest(BaseModel):
+    manual_approval: bool
+    reason: str | None = None

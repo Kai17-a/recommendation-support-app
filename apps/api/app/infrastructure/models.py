@@ -352,3 +352,23 @@ class MarkdownImportWarning(Base):
     resolved_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+    __table_args__ = (
+        Index("ix_audit_logs_target_changed_at", "target_type", "target_id", "changed_at"),
+        Index("ix_audit_logs_changed_by_changed_at", "changed_by", "changed_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    target_type: Mapped[str] = mapped_column(String(100))
+    target_id: Mapped[UUID] = mapped_column()
+    action: Mapped[str] = mapped_column(String(100))
+    before_data: Mapped[dict[str, object] | None] = mapped_column(JSON)
+    after_data: Mapped[dict[str, object] | None] = mapped_column(JSON)
+    changed_fields: Mapped[dict[str, object] | None] = mapped_column(JSON)
+    changed_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    request_id: Mapped[UUID | None] = mapped_column()
+    reason: Mapped[str | None] = mapped_column(Text)
+    changed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
