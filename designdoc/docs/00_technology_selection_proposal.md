@@ -7,29 +7,33 @@
 
 ## 2. 技術選定
 
-| 領域           | 採用案                                               | 設計との適合                                                                |
-| -------------- | ---------------------------------------------------- | --------------------------------------------------------------------------- |
-| 構成           | bun モノレポ                                         | UI・API・共有型を分離しつつ一元管理する。                                   |
-| Web UI         | Nuxt.js / Vue.js / TypeScript                        | 画面設計、アクセシビリティ、長文編集UIに対応する。                          |
-| API            | fastapi / Python3.14 / REST / uv, ruff, ty           | 業務ロジック・認可・AIオーケストレーションをモジュール分割する。            |
-| DB             | PostgreSQL                                           | UUID、JSON監査ログ、トランザクション、論理削除に適合する。                  |
-| ORM・Migration | Prisma                                               | 型安全なDBアクセスとマイグレーション管理を提供する。                        |
-| 非同期AI処理   | BullMQ + Redis                                       | `ai_jobs` をDBで正として保持し、実行キューを分離する。SSEで状態を通知する。 |
-| AI接続         | OpenAI互換HTTP Adapter                               | AI Gatewayの`base_url`を設定し、特定LLMベンダーへの依存を排除する。         |
-| Markdown       | remark系パーサー                                     | Markdown構造・拡張子・サイズ・バイナリを安全に検証する。                    |
-| ファイル保存   | S3互換ストレージ                                     | 元Markdownを保持する設定時のみ保存する。ローカル開発ではMinIOを利用する。   |
-| 認証           | OIDC（企業IdP連携）                                  | 設計の認証方針に準拠する。SAMLはIdP要件確定後に追加検討する。               |
-| 秘密情報       | .env / sops                                          | APIキー等をDBへ平文保存しない。                                             |
-| テスト         | Vitest、pytest,Supertest、Playwright、Testcontainers | ドメイン・API・E2E・PostgreSQL連携を検証する。                              |
+| 領域 | 採用案 | 設計との適合 |
+|---|---|---|
+| 構成 | Bun workspace + uv workspaceによるモノレポ | UI・API・契約を分離しつつ、一元管理する。ルートの開発・検証コマンドは`justfile`で統一する。 |
+| Web UI | Nuxt.js / Vue.js / TypeScript | 画面設計、アクセシビリティ、長文編集UIに対応する。 |
+| API | FastAPI / Python 3.14 / REST | 業務ロジック・認可・AIオーケストレーションをモジュール分割する。Python依存はuvで管理する。 |
+| DB | PostgreSQL | UUID、JSON監査ログ、トランザクション、論理削除に適合する。 |
+| ORM・Migration | SQLAlchemy 2.x + Alembic | Pythonで型付きのDBアクセスとマイグレーション管理を行う。 |
+| 非同期AI処理 | Dramatiq + Redis | `ai_jobs`をDBで正として保持し、実行キューを分離する。SSEで状態を通知する。 |
+| AI接続 | httpxによるOpenAI互換HTTP Adapter | AI Gatewayの`base_url`を設定し、特定LLMベンダーへの依存を排除する。 |
+| Markdown | markdown-it-py + bleach | Markdown構造を安全に解析し、HTMLを許可する場合はサニタイズする。 |
+| ファイル保存 | S3互換ストレージ | 元Markdownを保持する設定時のみ保存する。ローカル開発ではMinIOを利用する。 |
+| 認証 | OIDC（企業IdP連携） | 設計の認証方針に準拠する。SAMLはIdP要件確定後に追加検討する。 |
+| 秘密情報 | `.env` + sops | APIキー等をDBへ平文保存しない。プロトタイプの復号は開発・デプロイ環境に限定する。 |
+| API契約・型 | OpenAPI 3.1 + TypeScript型生成 | PythonとTypeScript間でソースを共用せず、REST API契約を正として型を生成する。 |
+| 静的解析・整形（UI） | ESLint + Prettier + vue-tsc | TypeScript・Vueコンポーネントのlint、整形、型検査を行う。 |
+| 静的解析・整形（API） | Ruff + ty | Pythonのlint・整形はRuff、型検査はtyで実施する。 |
+| テスト | pytest、httpx、Playwright、Testcontainers | ドメイン・API・E2E・PostgreSQL連携を検証する。UI単体テストにはVitestを利用する。 |
 
 ## 3. ディレクトリ構成案
 
 ```text
-apps/web        Nuxt.js UI
-apps/api        fastapi REST API
-packages/domain 業務ルール・エンティティ・値オブジェクト
-packages/ai     Orchestrator / 専門AIサービス / Gateway Adapter
-packages/shared API契約・Enum・共通型
+apps/web             Nuxt.js UI
+apps/api             FastAPI REST API・業務ドメイン・AI Orchestrator
+packages/api-client  OpenAPIから生成するTypeScript APIクライアント・型
+contracts/openapi    REST API契約
+infra                Docker Compose・MinIO・ローカル開発設定
+justfile             開発・テスト・CIコマンドの統一入口
 ```
 
 ## 4. AI実装方針
@@ -44,13 +48,15 @@ AIは、以下の専門コンポーネントとして分離する。
 
 AI Gateway呼び出しはAdapter層に限定する。AIは推薦可否・人物評価・スコアリング・ランキングを扱わない。
 
+Markdownの構文・見出し解析、拡張子検証、サイズ検証、バイナリ判定はアプリケーション側で決定的に実施する。AI Gatewayには、曖昧な内容の構造化、根拠抽出、警告生成のみを依頼する。
+
 ## 5. 実装開始前の確認事項
 
 - IdPの具体的な選定と、OIDCを正式採用してよいか。
   - 現時点では不要
 - AI Gateway設定の保存モデル。秘密情報はSecret Manager参照名のみをDBへ保存する案とする。
   - 現時点では不要。プロトタイプでは.envにsopsを利用する
-- Markdown Parserを「構造解析は決定的パーサー、曖昧箇所の抽出補助はAI」と二層化してよいか。現行設計にはAI Gateway経由解析と専門コンポーネントの両表現がある。
+- Markdown Parserは「構造解析は決定的パーサー、曖昧箇所の抽出補助はAI」の二層構成とする。
 - `ai_settings`およびプロンプト設定のテーブル定義がER図にない点。
 - 各ステータス・Enumの正式な値、および確定済み推薦文の編集可否。
 - 部長・マネージャーが閲覧できる監査ログの対象範囲。
