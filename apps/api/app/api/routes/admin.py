@@ -1,7 +1,7 @@
 from collections.abc import Sequence
 from uuid import UUID
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.admin.schemas import (
@@ -14,6 +14,7 @@ from app.admin.schemas import (
     RetentionPolicyUpdate,
 )
 from app.admin.service import AdminService
+from app.core.errors import ApiError
 from app.infrastructure.database import get_session
 from app.security.authentication import CurrentUser, get_current_user
 from app.security.authorization import AccessControl
@@ -33,8 +34,15 @@ def get_admin_service(session: Session = Depends(get_session)) -> AdminService:
 
 
 @router.get("/ai-settings", response_model=AiSettingResponse)
-async def get_ai_setting(service: AdminService = Depends(get_admin_service)) -> AiSettingResponse:
-    return AiSettingResponse.model_validate(service.get_ai_setting())
+async def get_ai_setting(
+    service: AdminService = Depends(get_admin_service),
+) -> AiSettingResponse | Response:
+    try:
+        return AiSettingResponse.model_validate(service.get_ai_setting())
+    except ApiError as error:
+        if error.code == "NOT_FOUND":
+            return Response(status_code=status.HTTP_204_NO_CONTENT)
+        raise
 
 
 @router.patch("/ai-settings", response_model=AiSettingResponse)

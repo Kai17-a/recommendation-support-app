@@ -44,6 +44,14 @@ export interface AiSettingUpdate {
   prompt_version: string;
 }
 
+export interface CurrentUser {
+  id: string;
+  department_id: string;
+  role: "manager" | "system_operator";
+  name: string;
+  email: string;
+}
+
 export interface MarkdownImport {
   import_id: string;
   job_id: string;

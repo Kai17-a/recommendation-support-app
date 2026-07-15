@@ -3,6 +3,7 @@ import type {
   AiJob,
   AiSetting,
   AiSettingUpdate,
+  CurrentUser,
   MarkdownImport,
   Member,
   Project,
@@ -20,6 +21,7 @@ const api = createApiClient({
   getToken: tokenStore.get,
 });
 const authenticated = ref(false);
+const currentUser = ref<CurrentUser | null>(null);
 const oidcError = ref("");
 const view = ref<View>("members");
 const members = ref<Member[]>([]);
@@ -63,7 +65,12 @@ async function initializeLogin() {
     authenticated.value = oidc.authenticated === true;
     if (authenticated.value) {
       window.setInterval(() => void oidc.updateToken(30), 20_000);
-      await loadMembers();
+      currentUser.value = await api.get<CurrentUser>("/api/v1/me");
+      if (currentUser.value.role === "manager") {
+        await loadMembers();
+      } else {
+        await openAdmin();
+      }
     }
   } catch {
     oidcError.value = "認証サービスへ接続できません。Keycloakの起動を確認してください。";
@@ -105,6 +112,7 @@ async function logout() {
   await oidc.logout({ redirectUri: window.location.origin });
   tokenStore.clear();
   authenticated.value = false;
+  currentUser.value = null;
   members.value = [];
   selectedMember.value = null;
 }
@@ -123,7 +131,10 @@ async function openAdmin() {
 
 async function loadAiSetting() {
   try {
-    const setting = await api.get<AiSetting>("/api/v1/admin/ai-settings");
+    const setting = await api.get<AiSetting | undefined>(
+      "/api/v1/admin/ai-settings",
+    );
+    if (!setting) return;
     aiSetting.value = setting;
     Object.assign(aiSettingForm, {
       provider: setting.provider,
@@ -278,9 +289,17 @@ async function finalizeRecommendation() {
 
     <template v-else>
       <nav aria-label="主要ナビゲーション">
-        <button type="button" @click="loadMembers">メンバー</button>
-        <button type="button" @click="loadRecommendations">推薦文</button>
-        <button type="button" @click="openAdmin">管理</button>
+        <template v-if="currentUser?.role === 'manager'">
+          <button type="button" @click="loadMembers">メンバー</button>
+          <button type="button" @click="loadRecommendations">推薦文</button>
+        </template>
+        <button
+          v-if="currentUser?.role === 'system_operator'"
+          type="button"
+          @click="openAdmin"
+        >
+          管理
+        </button>
       </nav>
       <p v-if="loading" class="notice" role="status">読み込み中です…</p>
       <p v-if="error" class="error" role="alert">{{ error }}</p>

@@ -92,7 +92,7 @@ async def test_ai_setting_can_be_read_and_updated_without_accepting_api_key(
     transport = httpx.ASGITransport(app=app)
     async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
         missing = await client.get("/api/v1/admin/ai-settings")
-        assert missing.status_code == 404
+        assert missing.status_code == 204
 
         created = await client.patch(
             "/api/v1/admin/ai-settings",

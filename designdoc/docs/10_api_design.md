@@ -19,6 +19,15 @@ DELETE /api/v1/members/{memberId}
 POST /api/v1/members/{memberId}/restore
 ```
 
+## 2.1 操作者API
+
+```http
+GET /api/v1/me
+```
+
+認証済み操作者のID、所属部署、ロール、表示名、メールアドレスを返す。Web UIはこのロールを用いて、
+許可されない業務API・管理APIを呼び出さない。
+
 ## 3. 案件経験API
 
 ```http
@@ -163,6 +172,7 @@ POST /api/v1/admin/deleted-records/{targetType}/{targetId}/purge
 ```
 
 AI設定の更新ではAPIキー本文を受け取らず、Secret参照名のみを更新する。
+AI設定が未登録の場合、`GET /api/v1/admin/ai-settings`は`204 No Content`を返す。
 
 ## 11. エラー形式
 

@@ -3,6 +3,7 @@ from app.main import app
 
 def test_all_required_api_endpoints_are_exposed() -> None:
     required = {
+        ("GET", "/api/v1/me"),
         ("GET", "/api/v1/members"),
         ("POST", "/api/v1/members"),
         ("GET", "/api/v1/members/{member_id}"),
@@ -63,4 +64,4 @@ def test_all_required_api_endpoints_are_exposed() -> None:
         if method != "parameters"
     }
     assert required <= actual
-    assert len(required) == 52
+    assert len(required) == 53

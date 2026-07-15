@@ -4,6 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from app.api.routes.admin import router as admin_router
 from app.api.routes.ai import router as ai_router
+from app.api.routes.current_user import router as current_user_router
 from app.api.routes.evaluations import router as evaluations_router
 from app.api.routes.health import router as health_router
 from app.api.routes.markdown_imports import router as markdown_imports_router
@@ -43,6 +44,7 @@ app.add_middleware(
     expose_headers=["X-Request-ID"],
 )
 app.include_router(health_router)
+app.include_router(current_user_router)
 app.include_router(admin_router)
 app.include_router(ai_router)
 app.include_router(evaluations_router)
