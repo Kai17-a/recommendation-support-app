@@ -22,6 +22,28 @@ export interface AiJob {
   error_message: string | null;
 }
 
+export interface AiSetting {
+  id: string;
+  provider: "custom";
+  base_url: string;
+  model: string;
+  api_key_secret_ref: string;
+  timeout_seconds: number;
+  max_retries: number;
+  prompt_version: string;
+  updated_at: string;
+}
+
+export interface AiSettingUpdate {
+  provider: "custom";
+  base_url: string;
+  model: string;
+  api_key_secret_ref: string;
+  timeout_seconds: number;
+  max_retries: number;
+  prompt_version: string;
+}
+
 export interface MarkdownImport {
   import_id: string;
   job_id: string;

@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import type {
   AiJob,
+  AiSetting,
+  AiSettingUpdate,
   MarkdownImport,
   Member,
   Project,
@@ -35,6 +37,16 @@ const purpose = ref("");
 const targetName = ref("");
 const markdownFile = ref<File | null>(null);
 const retainFile = ref(false);
+const aiSetting = ref<AiSetting | null>(null);
+const aiSettingForm = reactive<AiSettingUpdate>({
+  provider: "custom",
+  base_url: "",
+  model: "",
+  api_key_secret_ref: "AI_GATEWAY_API_KEY",
+  timeout_seconds: 60,
+  max_retries: 2,
+  prompt_version: "v1",
+});
 
 onMounted(() => {
   void initializeLogin();
@@ -101,6 +113,39 @@ async function loadMembers() {
   await run(async () => {
     members.value = await api.get<Member[]>("/api/v1/members");
     view.value = "members";
+  });
+}
+
+async function openAdmin() {
+  view.value = "admin";
+  await run(loadAiSetting);
+}
+
+async function loadAiSetting() {
+  try {
+    const setting = await api.get<AiSetting>("/api/v1/admin/ai-settings");
+    aiSetting.value = setting;
+    Object.assign(aiSettingForm, {
+      provider: setting.provider,
+      base_url: setting.base_url,
+      model: setting.model,
+      api_key_secret_ref: setting.api_key_secret_ref,
+      timeout_seconds: setting.timeout_seconds,
+      max_retries: setting.max_retries,
+      prompt_version: setting.prompt_version,
+    });
+  } catch (reason) {
+    if (reason instanceof ApiError && reason.status === 404) return;
+    throw reason;
+  }
+}
+
+async function saveAiSetting() {
+  await run(async () => {
+    aiSetting.value = await api.patch<AiSetting>(
+      "/api/v1/admin/ai-settings",
+      aiSettingForm,
+    );
   });
 }
 
@@ -235,7 +280,7 @@ async function finalizeRecommendation() {
       <nav aria-label="主要ナビゲーション">
         <button type="button" @click="loadMembers">メンバー</button>
         <button type="button" @click="loadRecommendations">推薦文</button>
-        <button type="button" @click="view = 'admin'">管理</button>
+        <button type="button" @click="openAdmin">管理</button>
       </nav>
       <p v-if="loading" class="notice" role="status">読み込み中です…</p>
       <p v-if="error" class="error" role="alert">{{ error }}</p>
@@ -446,7 +491,22 @@ async function finalizeRecommendation() {
         <section v-else aria-labelledby="admin-title">
           <p class="eyebrow">System operations</p>
           <h2 id="admin-title">管理</h2>
-          <div class="grid">
+          <div class="two-column">
+            <article class="card">
+              <h3>AI Gateway設定</h3>
+              <p class="hint">
+                OpenAI互換のAI Gatewayだけを設定します。APIキー本文は保存せず、環境変数の参照名だけを指定します。
+              </p>
+              <label>Gateway URL<input v-model="aiSettingForm.base_url" type="url" placeholder="https://gateway.example.com/v1" ></label>
+              <label>モデル<input v-model="aiSettingForm.model" placeholder="gpt-4.1-mini" ></label>
+              <label>APIキーのSecret参照名<input v-model="aiSettingForm.api_key_secret_ref" placeholder="AI_GATEWAY_API_KEY" ></label>
+              <label>タイムアウト（秒）<input v-model.number="aiSettingForm.timeout_seconds" type="number" min="1" max="600" ></label>
+              <label>最大再試行回数<input v-model.number="aiSettingForm.max_retries" type="number" min="0" max="10" ></label>
+              <label>プロンプト版<input v-model="aiSettingForm.prompt_version" placeholder="v1" ></label>
+              <button type="button" :disabled="loading || !aiSettingForm.base_url || !aiSettingForm.model || !aiSettingForm.api_key_secret_ref || !aiSettingForm.prompt_version" @click="saveAiSetting">AI設定を保存</button>
+              <p v-if="aiSetting" class="hint">最終更新: {{ new Date(aiSetting.updated_at).toLocaleString("ja-JP") }}</p>
+            </article>
+            <div class="grid">
             <a
               class="card admin-link"
               :href="`${config.public.apiBase}/docs#/admin`"
@@ -462,6 +522,7 @@ async function finalizeRecommendation() {
               ><strong>AI Gateway設定</strong
               ><span>Secret参照名と接続設定を管理 ↗</span></a
             >
+            </div>
           </div>
           <p class="hint">管理APIはsystem_operatorロールだけが利用できます。</p>
         </section>

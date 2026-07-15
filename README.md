@@ -76,6 +76,7 @@ mise exec -- just install
 
 AI機能を使う場合は、管理APIのAI設定に保存するSecret参照名と同名の環境変数へ、
 AI Gatewayのキーを設定します。キー自体をAI設定APIやDBへ保存しないでください。
+`operator`でWeb UIの「管理」を開くと、AI Gatewayの接続設定とSecret参照名を更新できます。
 
 ### 2. Docker基盤の起動
 
