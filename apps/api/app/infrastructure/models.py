@@ -205,3 +205,18 @@ class RecommendationVersion(Base):
     created_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class RecommendationEvidence(Base):
+    __tablename__ = "recommendation_evidences"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    recommendation_version_id: Mapped[UUID] = mapped_column(
+        ForeignKey("recommendation_versions.id"), index=True
+    )
+    paragraph_no: Mapped[int] = mapped_column()
+    source_type: Mapped[str] = mapped_column(String(100))
+    source_id: Mapped[UUID] = mapped_column(index=True)
+    evidence_text: Mapped[str] = mapped_column(Text)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
