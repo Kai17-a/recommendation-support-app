@@ -13,6 +13,7 @@ class Settings(BaseSettings):
     oidc_algorithms: str = "RS256"
     oidc_jwks_cache_seconds: int = 300
     oidc_clock_skew_seconds: int = 30
+    cors_allowed_origins: str = "http://localhost:3000"
     s3_endpoint_url: str | None = "http://localhost:9000"
     s3_region: str = "ap-northeast-1"
     s3_markdown_bucket: str = "recommendation-support-markdown"

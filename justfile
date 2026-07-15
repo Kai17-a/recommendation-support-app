@@ -26,6 +26,10 @@ db-migrate:
 bootstrap-user *args:
     uv run --directory apps/api python -m app.bootstrap.cli {{args}}
 
+bootstrap-local-users:
+    uv run --directory apps/api python -m app.bootstrap.cli --department-code local-dev --department-name 'ローカル開発部' --user-name 'ローカル運用者' --email operator@example.com --oidc-subject 11111111-1111-1111-1111-111111111111 --role system_operator --status active
+    uv run --directory apps/api python -m app.bootstrap.cli --department-code local-dev --department-name 'ローカル開発部' --user-name 'ローカルマネージャー' --email manager@example.com --oidc-subject 22222222-2222-2222-2222-222222222222 --role manager --status active
+
 lint:
     bun run web:lint
     uv run --directory apps/api ruff check .

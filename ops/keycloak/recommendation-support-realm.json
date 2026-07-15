@@ -1,0 +1,89 @@
+{
+  "realm": "recommendation-support",
+  "enabled": true,
+  "displayName": "推薦業務支援（ローカル開発）",
+  "accessTokenLifespan": 300,
+  "clients": [
+    {
+      "clientId": "recommendation-support-web",
+      "name": "Recommendation Support Web",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": false,
+      "redirectUris": ["http://localhost:3000/*"],
+      "webOrigins": ["http://localhost:3000"],
+      "attributes": {
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "profile",
+        "email",
+        "roles",
+        "web-origins",
+        "recommendation-support-api"
+      ]
+    },
+    {
+      "clientId": "recommendation-support-api",
+      "name": "Recommendation Support API audience",
+      "enabled": true,
+      "publicClient": true,
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false
+    }
+  ],
+  "clientScopes": [
+    {
+      "name": "recommendation-support-api",
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "API audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "recommendation-support-api",
+            "access.token.claim": "true",
+            "id.token.claim": "false"
+          }
+        }
+      ]
+    }
+  ],
+  "users": [
+    {
+      "id": "11111111-1111-1111-1111-111111111111",
+      "username": "operator",
+      "enabled": true,
+      "email": "operator@example.com",
+      "emailVerified": true,
+      "firstName": "ローカル",
+      "lastName": "運用者",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "local-dev-password",
+          "temporary": false
+        }
+      ]
+    },
+    {
+      "id": "22222222-2222-2222-2222-222222222222",
+      "username": "manager",
+      "enabled": true,
+      "email": "manager@example.com",
+      "emailVerified": true,
+      "firstName": "ローカル",
+      "lastName": "マネージャー",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "local-dev-password",
+          "temporary": false
+        }
+      ]
+    }
+  ]
+}

@@ -58,7 +58,7 @@ mise exec -- just web-dev
 
 ## Dockerを使ったローカル起動
 
-通常のローカル開発では、PostgreSQL、Redis、MinIOをDocker Composeで起動し、
+通常のローカル開発では、PostgreSQL、Redis、MinIO、KeycloakをDocker Composeで起動し、
 API、非同期worker、Web UIはホスト上で起動します。`compose.production.yml`は本番構成例、
 `docker-compose.integration.yml`は自動結合試験専用なので、通常開発では直接使用しません。
 
@@ -70,13 +70,9 @@ mise install
 mise exec -- just install
 ```
 
-`.env`の既定値はローカルComposeのPostgreSQL、Redis、MinIOへ接続する設定です。
-APIを操作するには、利用するIdPに合わせて最低限次も設定してください。
-
-```dotenv
-OIDC_ISSUER_URL=https://idp.example.com/realms/example
-OIDC_AUDIENCE=recommendation-support-api
-```
+`.env`の既定値はローカルComposeのPostgreSQL、Redis、MinIO、Keycloakへ接続する設定です。
+本番IdPへ接続する場合だけ、`OIDC_ISSUER_URL`、`OIDC_AUDIENCE`、
+`NUXT_PUBLIC_OIDC_*`を企業IdPの設定値へ置き換えてください。
 
 AI機能を使う場合は、管理APIのAI設定に保存するSecret参照名と同名の環境変数へ、
 AI Gatewayのキーを設定します。キー自体をAI設定APIやDBへ保存しないでください。
@@ -88,7 +84,7 @@ docker compose up -d
 docker compose ps
 ```
 
-`postgres`と`redis`が`healthy`、`minio`が`Up`、`minio-init`が正常終了すれば準備完了です。
+`postgres`、`redis`、`keycloak`が`healthy`、`minio`が`Up`、`minio-init`が正常終了すれば準備完了です。
 
 | サービス | ローカルURL・ポート |
 |---|---|
@@ -96,25 +92,21 @@ docker compose ps
 | Redis | `localhost:6379` |
 | MinIO API | `http://localhost:9000` |
 | MinIO Console | `http://localhost:9001` |
+| Keycloak | `http://localhost:8080` |
 
 MinIO Consoleには、`.env`の`MINIO_ROOT_USER`と`MINIO_ROOT_PASSWORD`でログインできます。
+Keycloak管理コンソールは`http://localhost:8080/admin`で、初期管理者は`.env`の
+`KEYCLOAK_ADMIN_USERNAME`と`KEYCLOAK_ADMIN_PASSWORD`です。これらの値はローカル開発専用です。
 
 ### 3. マイグレーションと初期操作者の登録
 
 ```bash
 mise exec -- just db-migrate
 
-mise exec -- just bootstrap-user \
-  --department-code platform \
-  --department-name 'プラットフォーム部' \
-  --user-name 'ローカル運用者' \
-  --email operator@example.com \
-  --oidc-subject 'IdPが発行するsubクレーム値' \
-  --role system_operator \
-  --status active
+mise exec -- just bootstrap-local-users
 ```
 
-`--oidc-subject`は、実際にローカル確認で使用するアクセストークンの`sub`と一致させます。
+このコマンドは、realmに固定登録したKeycloakユーザーの`sub`へ、操作者を冪等に紐付けます。
 
 ### 4. API、worker、Web UIの起動
 
@@ -129,7 +121,7 @@ mise exec -- uv run --directory apps/api \
   dramatiq app.ai.tasks app.markdown_imports.tasks --processes 1 --threads 4
 
 # Terminal 3: Web UI
-NUXT_PUBLIC_API_BASE=http://localhost:8000 mise exec -- just web-dev
+mise exec -- just web-dev
 ```
 
 起動後のURL:
@@ -139,8 +131,16 @@ NUXT_PUBLIC_API_BASE=http://localhost:8000 mise exec -- just web-dev
 - API readiness: `http://localhost:8000/ready`
 - Swagger UI: `http://localhost:8000/docs`
 
-Web UIでは、IdPから取得した短時間有効なアクセストークンを入力します。トークンはブラウザの
-`sessionStorage`だけに保存され、タブを閉じると破棄されます。
+Web UIの「Keycloakでログイン」を選ぶと、認可コード＋PKCEでログインします。
+アクセストークンを手入力する必要はありません。
+
+| 用途 | ユーザー名 | パスワード | API上の権限 |
+|---|---|---|---|
+| 管理API・AI設定 | `operator` | `local-dev-password` | `system_operator` |
+| 業務データ操作 | `manager` | `local-dev-password` | `manager` |
+
+これらはrealm importで作るローカル開発専用ユーザーです。本番では使用せず、企業IdPの
+利用者とOIDC subjectをbootstrapコマンドで登録してください。
 
 ### 5. Dockerだけで結合試験を実行する
 

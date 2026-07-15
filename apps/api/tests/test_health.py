@@ -26,6 +26,22 @@ async def test_health_check_returns_ok() -> None:
 
 
 @pytest.mark.anyio
+async def test_local_web_origin_is_allowed_by_cors() -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        response = await client.options(
+            "/api/v1/members",
+            headers={
+                "Origin": "http://localhost:3000",
+                "Access-Control-Request-Method": "GET",
+            },
+        )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == "http://localhost:3000"
+
+
+@pytest.mark.anyio
 async def test_readiness_reports_dependencies(monkeypatch) -> None:
     monkeypatch.setattr(
         health,

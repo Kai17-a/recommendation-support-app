@@ -8,6 +8,7 @@ import type {
   RecommendationVersion,
 } from "./types/api";
 import { ApiError, createApiClient } from "./utils/api-client";
+import { initializeOidc } from "./utils/oidc";
 import { tokenStore } from "./utils/token-store";
 
 type View = "members" | "member" | "recommendations" | "admin";
@@ -16,8 +17,8 @@ const api = createApiClient({
   baseUrl: config.public.apiBase,
   getToken: tokenStore.get,
 });
-const tokenInput = ref("");
 const authenticated = ref(false);
+const oidcError = ref("");
 const view = ref<View>("members");
 const members = ref<Member[]>([]);
 const selectedMember = ref<Member | null>(null);
@@ -36,9 +37,26 @@ const markdownFile = ref<File | null>(null);
 const retainFile = ref(false);
 
 onMounted(() => {
-  authenticated.value = Boolean(tokenStore.get());
-  if (authenticated.value) void loadMembers();
+  void initializeLogin();
 });
+
+async function initializeLogin() {
+  try {
+    const oidc = await initializeOidc({
+      url: config.public.oidcUrl,
+      realm: config.public.oidcRealm,
+      clientId: config.public.oidcClientId,
+    });
+    tokenStore.bind(oidc);
+    authenticated.value = oidc.authenticated === true;
+    if (authenticated.value) {
+      window.setInterval(() => void oidc.updateToken(30), 20_000);
+      await loadMembers();
+    }
+  } catch {
+    oidcError.value = "認証サービスへ接続できません。Keycloakの起動を確認してください。";
+  }
+}
 
 function message(reason: unknown): string {
   if (reason instanceof ApiError) return reason.message;
@@ -57,16 +75,22 @@ async function run(action: () => Promise<void>) {
   }
 }
 
-function login() {
-  const token = tokenInput.value.trim();
-  if (!token) return;
-  tokenStore.set(token);
-  tokenInput.value = "";
-  authenticated.value = true;
-  void loadMembers();
+async function login() {
+  const oidc = await initializeOidc({
+    url: config.public.oidcUrl,
+    realm: config.public.oidcRealm,
+    clientId: config.public.oidcClientId,
+  });
+  await oidc.login();
 }
 
-function logout() {
+async function logout() {
+  const oidc = await initializeOidc({
+    url: config.public.oidcUrl,
+    realm: config.public.oidcRealm,
+    clientId: config.public.oidcClientId,
+  });
+  await oidc.logout({ redirectUri: window.location.origin });
   tokenStore.clear();
   authenticated.value = false;
   members.value = [];
@@ -193,20 +217,17 @@ async function finalizeRecommendation() {
     <main v-if="!authenticated" class="login" aria-labelledby="login-title">
       <section class="card">
         <p class="eyebrow">OIDC session</p>
-        <h2 id="login-title">アクセストークンで接続</h2>
+        <h2 id="login-title">開発用Keycloakでログイン</h2>
         <p>
-          IdPで取得した短時間有効なBearer tokenを、このタブのsession
-          storageだけに保持します。
+          ローカルDockerで起動したKeycloakへ移動します。アクセストークンを手入力する必要は
+          ありません。
         </p>
-        <label
-          >アクセストークン<input
-            v-model="tokenInput"
-            type="password"
-            autocomplete="off"
-        ></label>
-        <button type="button" :disabled="!tokenInput.trim()" @click="login">
-          業務画面を開く
-        </button>
+        <p v-if="oidcError" class="error" role="alert">{{ oidcError }}</p>
+        <button type="button" @click="login">Keycloakでログイン</button>
+        <p class="hint">
+          開発ユーザー: <code>operator</code> または <code>manager</code> ／ パスワード:
+          <code>local-dev-password</code>
+        </p>
       </section>
     </main>
 

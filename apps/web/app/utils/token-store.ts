@@ -1,13 +1,15 @@
-const TOKEN_KEY = "recommendation-support.oidc-access-token";
+import type Keycloak from "keycloak-js";
+
+let client: Keycloak | undefined;
 
 export const tokenStore = {
-  get(): string | null {
-    return import.meta.client ? sessionStorage.getItem(TOKEN_KEY) : null;
+  bind(value: Keycloak): void {
+    client = value;
   },
-  set(token: string): void {
-    if (import.meta.client) sessionStorage.setItem(TOKEN_KEY, token);
+  get(): string | null {
+    return client?.token ?? null;
   },
   clear(): void {
-    if (import.meta.client) sessionStorage.removeItem(TOKEN_KEY);
+    client = undefined;
   },
 };
