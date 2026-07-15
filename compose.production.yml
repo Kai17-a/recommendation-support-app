@@ -1,0 +1,38 @@
+services:
+  api:
+    build:
+      context: ./apps/api
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    environment: &app_environment
+      DATABASE_URL: ${DATABASE_URL:?inject from secret manager}
+      REDIS_URL: ${REDIS_URL:?required}
+      OIDC_ISSUER_URL: ${OIDC_ISSUER_URL:?required}
+      OIDC_AUDIENCE: ${OIDC_AUDIENCE:?required}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:-}
+      S3_REGION: ${S3_REGION:?required}
+      S3_MARKDOWN_BUCKET: ${S3_MARKDOWN_BUCKET:?required}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:?inject from secret manager}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:?inject from secret manager}
+      S3_SERVER_SIDE_ENCRYPTION: AES256
+      LOG_LEVEL: INFO
+    ports: ["127.0.0.1:8000:8000"]
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=2)"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+
+  worker:
+    build:
+      context: ./apps/api
+    restart: unless-stopped
+    read_only: true
+    tmpfs: [/tmp]
+    security_opt: [no-new-privileges:true]
+    cap_drop: [ALL]
+    environment: *app_environment
+    command: [dramatiq, app.ai.tasks, app.markdown_imports.tasks, --processes, "2", --threads, "4"]

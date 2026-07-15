@@ -1,0 +1,10 @@
+{
+  "Rules": [
+    {
+      "ID": "abort-incomplete-markdown-uploads",
+      "Status": "Enabled",
+      "Filter": {"Prefix": "markdown-imports/"},
+      "AbortIncompleteMultipartUpload": {"DaysAfterInitiation": 1}
+    }
+  ]
+}
