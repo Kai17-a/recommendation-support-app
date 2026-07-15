@@ -4,7 +4,12 @@ from uuid import UUID
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 
-from app.admin.schemas import RetentionPolicyResponse, RetentionPolicyUpdate
+from app.admin.schemas import (
+    AiSettingResponse,
+    AiSettingUpdate,
+    RetentionPolicyResponse,
+    RetentionPolicyUpdate,
+)
 from app.admin.service import AdminService
 from app.infrastructure.database import get_session
 
@@ -13,6 +18,19 @@ router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 def get_admin_service(session: Session = Depends(get_session)) -> AdminService:
     return AdminService(session)
+
+
+@router.get("/ai-settings", response_model=AiSettingResponse)
+def get_ai_setting(service: AdminService = Depends(get_admin_service)) -> AiSettingResponse:
+    return AiSettingResponse.model_validate(service.get_ai_setting())
+
+
+@router.patch("/ai-settings", response_model=AiSettingResponse)
+def update_ai_setting(
+    command: AiSettingUpdate,
+    service: AdminService = Depends(get_admin_service),
+) -> AiSettingResponse:
+    return AiSettingResponse.model_validate(service.update_ai_setting(command))
 
 
 @router.get("/retention-policies", response_model=list[RetentionPolicyResponse])

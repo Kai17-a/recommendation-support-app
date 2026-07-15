@@ -4,9 +4,9 @@ from uuid import UUID
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.admin.schemas import RetentionPolicyUpdate
+from app.admin.schemas import AiSettingUpdate, RetentionPolicyUpdate
 from app.core.errors import ApiError
-from app.infrastructure.models import RetentionPolicy
+from app.infrastructure.models import AiSetting, RetentionPolicy
 
 
 class AdminService:
@@ -16,6 +16,22 @@ class AdminService:
     def list_retention_policies(self) -> Sequence[RetentionPolicy]:
         statement = select(RetentionPolicy).order_by(RetentionPolicy.target_type)
         return list(self.session.scalars(statement))
+
+    def get_ai_setting(self) -> AiSetting:
+        setting = self.session.scalar(select(AiSetting).order_by(AiSetting.created_at).limit(1))
+        if setting is None:
+            raise ApiError(status_code=404, code="NOT_FOUND", message="AI設定が見つかりません。")
+        return setting
+
+    def update_ai_setting(self, command: AiSettingUpdate) -> AiSetting:
+        setting = self.get_ai_setting()
+        for name, value in command.model_dump(exclude_unset=True).items():
+            if name == "base_url" and value is not None:
+                value = str(value).rstrip("/")
+            setattr(setting, name, value)
+        self.session.commit()
+        self.session.refresh(setting)
+        return setting
 
     def update_retention_policy(
         self, policy_id: UUID, command: RetentionPolicyUpdate

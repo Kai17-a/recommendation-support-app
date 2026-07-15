@@ -8,7 +8,7 @@ from sqlalchemy.pool import StaticPool
 
 from app.admin.service import AdminService
 from app.api.routes.admin import get_admin_service
-from app.infrastructure.models import Base, RetentionPolicy
+from app.infrastructure.models import AiSetting, Base, RetentionPolicy
 from app.main import app
 
 
@@ -35,6 +35,17 @@ def retention_policy_id() -> Generator[str]:
             require_manual_approval=True,
         )
         session.add(policy)
+        session.add(
+            AiSetting(
+                provider="custom",
+                base_url="https://gateway.example.com/v1",
+                model="analysis-default",
+                api_key_secret_ref="ai-gateway-key",
+                timeout_seconds=120,
+                max_retries=2,
+                prompt_version="project-analysis-v1",
+            )
+        )
         session.commit()
         policy_id = str(policy.id)
 
@@ -81,3 +92,28 @@ async def test_retention_policy_update_rejects_unknown_policy(retention_policy_i
 
     assert response.status_code == 404
     assert response.json()["error"]["code"] == "NOT_FOUND"
+
+
+@pytest.mark.anyio
+async def test_ai_setting_can_be_read_and_updated_without_accepting_api_key(
+    retention_policy_id: str,
+) -> None:
+    transport = httpx.ASGITransport(app=app)
+    async with httpx.AsyncClient(transport=transport, base_url="http://test") as client:
+        current = await client.get("/api/v1/admin/ai-settings")
+        assert current.status_code == 200
+        assert current.json()["api_key_secret_ref"] == "ai-gateway-key"
+
+        updated = await client.patch(
+            "/api/v1/admin/ai-settings",
+            json={"model": "analysis-v2", "timeout_seconds": 90},
+        )
+        assert updated.status_code == 200
+        assert updated.json()["model"] == "analysis-v2"
+        assert updated.json()["timeout_seconds"] == 90
+
+        rejected = await client.patch(
+            "/api/v1/admin/ai-settings",
+            json={"api_key": "must-not-be-stored"},
+        )
+        assert rejected.status_code == 422

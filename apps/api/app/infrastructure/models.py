@@ -2,7 +2,19 @@ from datetime import date, datetime
 from enum import StrEnum
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, Date, DateTime, Enum, ForeignKey, Integer, String, Text, func
+from sqlalchemy import (
+    JSON,
+    Boolean,
+    Date,
+    DateTime,
+    Enum,
+    ForeignKey,
+    Index,
+    Integer,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
 
 
@@ -231,6 +243,65 @@ class RetentionPolicy(Base):
     purge_enabled: Mapped[bool] = mapped_column(Boolean)
     require_manual_approval: Mapped[bool] = mapped_column(Boolean)
     created_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    updated_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class AiJob(Base):
+    __tablename__ = "ai_jobs"
+    __table_args__ = (
+        Index("ix_ai_jobs_status_created_at", "status", "created_at"),
+        Index("ix_ai_jobs_target", "target_type", "target_id"),
+    )
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    job_type: Mapped[str] = mapped_column(String(100))
+    target_type: Mapped[str] = mapped_column(String(100))
+    target_id: Mapped[UUID] = mapped_column()
+    status: Mapped[str] = mapped_column(String(100))
+    requested_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    completed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    error_message: Mapped[str | None] = mapped_column(Text)
+    retry_count: Mapped[int] = mapped_column(Integer, default=0)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AiAnalysis(Base):
+    __tablename__ = "ai_analyses"
+    __table_args__ = (Index("ix_ai_analyses_target", "target_type", "target_id", "deleted_at"),)
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    ai_job_id: Mapped[UUID] = mapped_column(ForeignKey("ai_jobs.id"), unique=True)
+    target_type: Mapped[str] = mapped_column(String(100))
+    target_id: Mapped[UUID] = mapped_column()
+    provider: Mapped[str] = mapped_column(String(100))
+    model: Mapped[str] = mapped_column(String(255))
+    prompt_version: Mapped[str] = mapped_column(String(100))
+    analysis_result: Mapped[dict[str, object]] = mapped_column(JSON)
+    evidence_map: Mapped[dict[str, object]] = mapped_column(JSON)
+    source_snapshot: Mapped[str] = mapped_column(Text)
+    executed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class AiSetting(Base):
+    __tablename__ = "ai_settings"
+
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    provider: Mapped[str] = mapped_column(String(100))
+    base_url: Mapped[str] = mapped_column(String(2048))
+    model: Mapped[str] = mapped_column(String(255))
+    api_key_secret_ref: Mapped[str] = mapped_column(String(255))
+    timeout_seconds: Mapped[int] = mapped_column(Integer)
+    max_retries: Mapped[int] = mapped_column(Integer)
+    prompt_version: Mapped[str] = mapped_column(String(100))
     updated_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(

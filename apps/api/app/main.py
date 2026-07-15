@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.routes.admin import router as admin_router
+from app.api.routes.ai import router as ai_router
 from app.api.routes.evaluations import router as evaluations_router
 from app.api.routes.health import router as health_router
 from app.api.routes.members import router as members_router
@@ -24,6 +25,7 @@ app = FastAPI(
 app.add_exception_handler(ApiError, api_error_handler)
 app.include_router(health_router)
 app.include_router(admin_router)
+app.include_router(ai_router)
 app.include_router(evaluations_router)
 app.include_router(members_router)
 app.include_router(projects_router)
