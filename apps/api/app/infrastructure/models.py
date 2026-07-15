@@ -38,6 +38,11 @@ class MemberStatus(StrEnum):
     RETIRED = "retired"
 
 
+def enum_values(enum_class):
+    """Persist StrEnum values so ORM models match Alembic's PostgreSQL enums."""
+    return [member.value for member in enum_class]
+
+
 class Department(Base):
     __tablename__ = "departments"
 
@@ -59,8 +64,12 @@ class User(Base):
     name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255), unique=True)
     oidc_subject: Mapped[str | None] = mapped_column(String(255), unique=True)
-    role: Mapped[UserRole] = mapped_column(Enum(UserRole, name="user_role"))
-    status: Mapped[UserStatus] = mapped_column(Enum(UserStatus, name="user_status"))
+    role: Mapped[UserRole] = mapped_column(
+        Enum(UserRole, name="user_role", values_callable=enum_values)
+    )
+    status: Mapped[UserStatus] = mapped_column(
+        Enum(UserStatus, name="user_status", values_callable=enum_values)
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
@@ -74,7 +83,9 @@ class Member(Base):
     department_id: Mapped[UUID] = mapped_column(ForeignKey("departments.id"), index=True)
     manager_user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id"), index=True)
     name: Mapped[str] = mapped_column(String(255))
-    status: Mapped[MemberStatus] = mapped_column(Enum(MemberStatus, name="member_status"))
+    status: Mapped[MemberStatus] = mapped_column(
+        Enum(MemberStatus, name="member_status", values_callable=enum_values)
+    )
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
