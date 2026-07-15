@@ -17,10 +17,7 @@
         "pkce.code.challenge.method": "S256"
       },
       "defaultClientScopes": [
-        "profile",
-        "email",
-        "roles",
-        "web-origins",
+        "basic",
         "recommendation-support-api"
       ]
     },
@@ -34,6 +31,23 @@
     }
   ],
   "clientScopes": [
+    {
+      "name": "basic",
+      "protocol": "openid-connect",
+      "protocolMappers": [
+        {
+          "name": "Subject (sub)",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-sub-mapper",
+          "consentRequired": false,
+          "config": {
+            "access.token.claim": "true",
+            "id.token.claim": "true",
+            "introspection.token.claim": "true"
+          }
+        }
+      ]
+    },
     {
       "name": "recommendation-support-api",
       "protocol": "openid-connect",

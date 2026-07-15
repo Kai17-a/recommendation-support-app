@@ -1,10 +1,14 @@
+from pathlib import Path
+
 from pydantic_settings import BaseSettings, SettingsConfigDict
+
+REPOSITORY_ROOT = Path(__file__).resolve().parents[4]
 
 
 class Settings(BaseSettings):
     """実行環境から読み込むアプリケーション設定。"""
 
-    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+    model_config = SettingsConfigDict(env_file=REPOSITORY_ROOT / ".env", extra="ignore")
 
     database_url: str = "postgresql+psycopg://app:change-me-for-local-development@localhost:5432/recommendation_support"
     redis_url: str = "redis://localhost:6379/0"
