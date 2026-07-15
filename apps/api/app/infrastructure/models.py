@@ -174,3 +174,34 @@ class MemberSkillEvidence(Base):
     evidence_text: Mapped[str] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class Recommendation(Base):
+    __tablename__ = "recommendations"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    member_id: Mapped[UUID] = mapped_column(ForeignKey("members.id"), index=True)
+    purpose: Mapped[str] = mapped_column(String(255))
+    target_name: Mapped[str | None] = mapped_column(String(255))
+    target_requirements: Mapped[str | None] = mapped_column(Text)
+    emphasis_points: Mapped[str | None] = mapped_column(Text)
+    tone: Mapped[str | None] = mapped_column(String(100))
+    output_format: Mapped[str | None] = mapped_column(String(100))
+    status: Mapped[str] = mapped_column(String(100))
+    finalized_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
+
+
+class RecommendationVersion(Base):
+    __tablename__ = "recommendation_versions"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    recommendation_id: Mapped[UUID] = mapped_column(ForeignKey("recommendations.id"), index=True)
+    version_no: Mapped[int] = mapped_column()
+    version_type: Mapped[str] = mapped_column(String(100))
+    content: Mapped[str] = mapped_column(Text)
+    created_by: Mapped[UUID | None] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    deleted_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), index=True)
