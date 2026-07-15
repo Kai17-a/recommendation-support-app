@@ -58,6 +58,7 @@ class User(Base):
     department_id: Mapped[UUID] = mapped_column(ForeignKey("departments.id"))
     name: Mapped[str] = mapped_column(String(255))
     email: Mapped[str] = mapped_column(String(255), unique=True)
+    oidc_subject: Mapped[str | None] = mapped_column(String(255), unique=True)
     role: Mapped[UserRole] = mapped_column(Enum(UserRole, name="user_role"))
     status: Mapped[UserStatus] = mapped_column(Enum(UserStatus, name="user_status"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
