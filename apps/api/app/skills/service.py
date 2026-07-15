@@ -6,12 +6,14 @@ from sqlalchemy.orm import Session
 
 from app.core.errors import ApiError
 from app.infrastructure.models import Member, MemberSkill, MemberSkillEvidence, Skill
+from app.security.authorization import AccessControl
 from app.skills.schemas import SkillCreate, SkillUpdate
 
 
 class SkillService:
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, access: AccessControl | None = None) -> None:
         self.session = session
+        self.access = access
 
     def list_for_member(self, member_id: UUID) -> list[MemberSkill]:
         self._member(member_id)
@@ -67,6 +69,8 @@ class SkillService:
         )
 
     def _member(self, id: UUID) -> Member:
+        if self.access is not None:
+            return self.access.ensure_member(id)
         x = self.session.scalar(select(Member).where(Member.id == id, Member.deleted_at.is_(None)))
         if x is None:
             raise ApiError(status_code=404, code="NOT_FOUND", message="メンバーが見つかりません。")
@@ -78,4 +82,5 @@ class SkillService:
         )
         if x is None:
             raise ApiError(status_code=404, code="NOT_FOUND", message="スキルが見つかりません。")
+        self._member(x.member_id)
         return x

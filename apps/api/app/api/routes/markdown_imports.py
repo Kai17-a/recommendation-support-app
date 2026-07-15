@@ -12,15 +12,20 @@ from app.markdown_imports.schemas import (
 )
 from app.markdown_imports.service import MarkdownImportService
 from app.markdown_imports.storage import get_markdown_object_storage
+from app.security.authentication import CurrentUser, get_current_user
+from app.security.authorization import AccessControl
 
 router = APIRouter(tags=["markdown-imports"])
 
 
-def get_markdown_import_service(session: Session = Depends(get_session)) -> MarkdownImportService:
+def get_markdown_import_service(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+) -> MarkdownImportService:
     return MarkdownImportService(
         session,
         DramatiqAiJobDispatcher(),
         get_markdown_object_storage(),
+        AccessControl(session, user),
     )
 
 

@@ -7,19 +7,25 @@ from sqlalchemy.orm import Session
 from app.core.errors import ApiError
 from app.infrastructure.models import Department, Member, User, UserRole, UserStatus
 from app.members.schemas import MemberCreate, MemberUpdate
+from app.security.authorization import AccessControl
 
 
 class MemberService:
     """メンバーの業務データを扱うアプリケーションサービス。"""
 
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, access: AccessControl | None = None) -> None:
         self.session = session
+        self.access = access
 
     def list_active(self) -> list[Member]:
         statement = select(Member).where(Member.deleted_at.is_(None)).order_by(Member.name)
+        if self.access is not None:
+            statement = statement.where(self.access.member_scope())
         return list(self.session.scalars(statement))
 
     def get_active(self, member_id: UUID) -> Member:
+        if self.access is not None:
+            return self.access.ensure_member(member_id)
         member = self.session.scalar(
             select(Member).where(Member.id == member_id, Member.deleted_at.is_(None))
         )
@@ -28,6 +34,8 @@ class MemberService:
         return member
 
     def create(self, command: MemberCreate) -> Member:
+        if self.access is not None:
+            self.access.ensure_department(command.department_id)
         self._validate_references(command.department_id, command.manager_user_id)
         member = Member(**command.model_dump())
         self.session.add(member)
@@ -40,6 +48,8 @@ class MemberService:
         changes = command.model_dump(exclude_unset=True)
         department_id = changes.get("department_id", member.department_id)
         manager_user_id = changes.get("manager_user_id", member.manager_user_id)
+        if self.access is not None and "department_id" in changes:
+            self.access.ensure_department(department_id)
         self._validate_references(department_id, manager_user_id)
 
         for field_name, value in changes.items():
@@ -54,6 +64,8 @@ class MemberService:
         self.session.commit()
 
     def restore(self, member_id: UUID) -> Member:
+        if self.access is not None:
+            self.access.ensure_member(member_id, include_deleted=True)
         member = self.session.get(Member, member_id)
         if member is None:
             raise self._not_found(member_id)
@@ -78,11 +90,12 @@ class MemberService:
             manager is None
             or manager.role is not UserRole.MANAGER
             or manager.status is not UserStatus.ACTIVE
+            or manager.department_id != department_id
         ):
             raise ApiError(
                 status_code=422,
                 code="VALIDATION_ERROR",
-                message="指定された管理者が有効なマネージャーではありません。",
+                message="指定された管理者は対象部署の有効なマネージャーではありません。",
                 details={"manager_user_id": str(manager_user_id)},
             )
 

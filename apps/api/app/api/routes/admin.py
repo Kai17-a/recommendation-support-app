@@ -15,11 +15,16 @@ from app.admin.schemas import (
 )
 from app.admin.service import AdminService
 from app.infrastructure.database import get_session
+from app.security.authentication import CurrentUser, get_current_user
+from app.security.authorization import AccessControl
 
 router = APIRouter(prefix="/api/v1/admin", tags=["admin"])
 
 
-def get_admin_service(session: Session = Depends(get_session)) -> AdminService:
+def get_admin_service(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+) -> AdminService:
+    AccessControl(session, user).require_system_operator()
     return AdminService(session)
 
 

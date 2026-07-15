@@ -6,12 +6,16 @@ from sqlalchemy.orm import Session
 from app.evaluations.schemas import EvaluationCreate, EvaluationResponse, EvaluationUpdate
 from app.evaluations.service import EvaluationService
 from app.infrastructure.database import get_session
+from app.security.authentication import CurrentUser, get_current_user
+from app.security.authorization import AccessControl
 
 router = APIRouter(tags=["evaluations"])
 
 
-def service(session: Session = Depends(get_session)) -> EvaluationService:
-    return EvaluationService(session)
+def service(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+) -> EvaluationService:
+    return EvaluationService(session, AccessControl(session, user))
 
 
 @router.get("/api/v1/members/{member_id}/evaluations", response_model=list[EvaluationResponse])

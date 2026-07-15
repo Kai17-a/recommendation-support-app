@@ -7,12 +7,16 @@ from app.ai.dispatcher import DramatiqAiJobDispatcher
 from app.ai.schemas import AiAnalysisResponse, AiAnalysisUpdate, AiJobResponse
 from app.ai.service import AiService
 from app.infrastructure.database import get_session
+from app.security.authentication import CurrentUser, get_current_user
+from app.security.authorization import AccessControl
 
 router = APIRouter(tags=["ai"])
 
 
-def get_ai_service(session: Session = Depends(get_session)) -> AiService:
-    return AiService(session, DramatiqAiJobDispatcher())
+def get_ai_service(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+) -> AiService:
+    return AiService(session, DramatiqAiJobDispatcher(), AccessControl(session, user))
 
 
 @router.post(

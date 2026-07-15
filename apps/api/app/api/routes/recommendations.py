@@ -16,13 +16,15 @@ from app.recommendations.schemas import (
     RecommendationVersionUpdate,
 )
 from app.recommendations.service import RecommendationService
+from app.security.authentication import CurrentUser, get_current_user
+from app.security.authorization import AccessControl
 
 router = APIRouter(prefix="/api/v1/recommendations", tags=["recommendations"])
 version_router = APIRouter(prefix="/api/v1/recommendation-versions", tags=["recommendations"])
 
 
-def svc(s: Session = Depends(get_session)):
-    return RecommendationService(s, DramatiqAiJobDispatcher())
+def svc(s: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)):
+    return RecommendationService(s, DramatiqAiJobDispatcher(), access=AccessControl(s, user))
 
 
 @router.get("", response_model=list[RecommendationResponse])

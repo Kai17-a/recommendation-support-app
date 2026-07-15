@@ -7,11 +7,13 @@ from sqlalchemy.orm import Session
 from app.core.errors import ApiError
 from app.evaluations.schemas import EvaluationCreate, EvaluationUpdate
 from app.infrastructure.models import Member, MemberEvaluation, ProjectExperience
+from app.security.authorization import AccessControl
 
 
 class EvaluationService:
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, access: AccessControl | None = None) -> None:
         self.session = session
+        self.access = access
 
     def list_for_member(self, member_id: UUID) -> list[MemberEvaluation]:
         self._member(member_id)
@@ -71,6 +73,8 @@ class EvaluationService:
         self.session.commit()
 
     def _member(self, member_id: UUID) -> Member:
+        if self.access is not None:
+            return self.access.ensure_member(member_id)
         row = self.session.scalar(
             select(Member).where(Member.id == member_id, Member.deleted_at.is_(None))
         )
@@ -86,4 +90,5 @@ class EvaluationService:
         )
         if row is None:
             raise ApiError(status_code=404, code="NOT_FOUND", message="人物評価が見つかりません。")
+        self._member(row.member_id)
         return row

@@ -19,6 +19,7 @@ from app.infrastructure.models import (
 )
 from app.markdown_imports.schemas import MarkdownImportResponse, MarkdownWarningUpdate
 from app.markdown_imports.storage import MarkdownObjectStorage
+from app.security.authorization import AccessControl
 
 MAX_FILE_SIZE = 10 * 1024 * 1024
 
@@ -29,10 +30,12 @@ class MarkdownImportService:
         session: Session,
         dispatcher: MarkdownImportDispatcher | None = None,
         storage: MarkdownObjectStorage | None = None,
+        access: AccessControl | None = None,
     ) -> None:
         self.session = session
         self.dispatcher = dispatcher
         self.storage = storage
+        self.access = access
 
     def create(
         self, project_id: UUID, member_id: UUID, filename: str | None, data: bytes, retain: bool
@@ -51,6 +54,8 @@ class MarkdownImportService:
                 code="NOT_FOUND",
                 message="対象のメンバーまたは案件が見つかりません。",
             )
+        if self.access is not None:
+            self.access.ensure_member(member_id)
         if project.member_id != member_id:
             raise ApiError(
                 status_code=422,
@@ -156,6 +161,7 @@ class MarkdownImportService:
         row = self.session.get(MarkdownImportWarning, warning_id)
         if row is None:
             raise ApiError(status_code=404, code="NOT_FOUND", message="警告が見つかりません。")
+        self._import(row.markdown_import_id)
         row.resolution_status = command.resolution_status
         row.resolved_at = None if command.resolution_status == "unresolved" else datetime.now(UTC)
         row.resolved_by = None
@@ -173,6 +179,8 @@ class MarkdownImportService:
             raise ApiError(
                 status_code=404, code="NOT_FOUND", message="Markdown取り込みが見つかりません。"
             )
+        if self.access is not None:
+            self.access.ensure_member(row.member_id)
         return row
 
     def _response(self, row: MarkdownImport, job: AiJob) -> MarkdownImportResponse:

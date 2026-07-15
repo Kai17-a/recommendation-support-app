@@ -4,14 +4,18 @@ from fastapi import APIRouter, Depends, Response, status
 from sqlalchemy.orm import Session
 
 from app.infrastructure.database import get_session
+from app.security.authentication import CurrentUser, get_current_user
+from app.security.authorization import AccessControl
 from app.skills.schemas import EvidenceResponse, MemberSkillResponse, SkillCreate, SkillUpdate
 from app.skills.service import SkillService
 
 router = APIRouter(tags=["skills"])
 
 
-def service(s: Session = Depends(get_session)) -> SkillService:
-    return SkillService(s)
+def service(
+    s: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+) -> SkillService:
+    return SkillService(s, AccessControl(s, user))
 
 
 @router.get("/api/v1/members/{member_id}/skills", response_model=list[MemberSkillResponse])

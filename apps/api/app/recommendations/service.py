@@ -20,17 +20,25 @@ from app.recommendations.schemas import (
     RecommendationUpdate,
     RecommendationVersionUpdate,
 )
+from app.security.authorization import AccessControl
 
 
 class RecommendationService:
-    def __init__(self, s: Session, dispatcher: RecommendationGenerationDispatcher | None = None):
+    def __init__(
+        self,
+        s: Session,
+        dispatcher: RecommendationGenerationDispatcher | None = None,
+        access: AccessControl | None = None,
+    ):
         self.s = s
         self.dispatcher = dispatcher
+        self.access = access
 
     def list(self):
-        return list(
-            self.s.scalars(select(Recommendation).where(Recommendation.deleted_at.is_(None)))
-        )
+        statement = select(Recommendation).join(Member).where(Recommendation.deleted_at.is_(None))
+        if self.access is not None:
+            statement = statement.where(self.access.member_scope())
+        return list(self.s.scalars(statement))
 
     def create(self, c: RecommendationCreate):
         self._member(c.member_id)
@@ -50,6 +58,7 @@ class RecommendationService:
             raise ApiError(
                 status_code=404, code="NOT_FOUND", message="推薦プロジェクトが見つかりません。"
             )
+        self._member(x.member_id)
         return x
 
     def update(self, id: UUID, c: RecommendationUpdate):
@@ -172,6 +181,8 @@ class RecommendationService:
         )
 
     def _member(self, member_id: UUID) -> Member:
+        if self.access is not None:
+            return self.access.ensure_member(member_id)
         member = self.s.scalar(
             select(Member).where(Member.id == member_id, Member.deleted_at.is_(None))
         )

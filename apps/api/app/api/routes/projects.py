@@ -6,12 +6,16 @@ from sqlalchemy.orm import Session
 from app.infrastructure.database import get_session
 from app.projects.schemas import ProjectCreate, ProjectResponse, ProjectUpdate
 from app.projects.service import ProjectService
+from app.security.authentication import CurrentUser, get_current_user
+from app.security.authorization import AccessControl
 
 router = APIRouter(tags=["projects"])
 
 
-def get_project_service(session: Session = Depends(get_session)) -> ProjectService:
-    return ProjectService(session)
+def get_project_service(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+) -> ProjectService:
+    return ProjectService(session, AccessControl(session, user))
 
 
 @router.get("/api/v1/members/{member_id}/projects", response_model=list[ProjectResponse])

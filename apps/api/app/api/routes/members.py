@@ -6,12 +6,16 @@ from sqlalchemy.orm import Session
 from app.infrastructure.database import get_session
 from app.members.schemas import MemberCreate, MemberResponse, MemberUpdate
 from app.members.service import MemberService
+from app.security.authentication import CurrentUser, get_current_user
+from app.security.authorization import AccessControl
 
 router = APIRouter(prefix="/api/v1/members", tags=["members"])
 
 
-def get_member_service(session: Session = Depends(get_session)) -> MemberService:
-    return MemberService(session)
+def get_member_service(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+) -> MemberService:
+    return MemberService(session, AccessControl(session, user))
 
 
 @router.get("", response_model=list[MemberResponse])

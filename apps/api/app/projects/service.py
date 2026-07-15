@@ -7,13 +7,15 @@ from sqlalchemy.orm import Session
 from app.core.errors import ApiError
 from app.infrastructure.models import Member, ProjectExperience
 from app.projects.schemas import ProjectCreate, ProjectUpdate
+from app.security.authorization import AccessControl
 
 
 class ProjectService:
     """メンバー単位の案件経験を扱うアプリケーションサービス。"""
 
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, access: AccessControl | None = None) -> None:
         self.session = session
+        self.access = access
 
     def list_for_member(self, member_id: UUID) -> list[ProjectExperience]:
         self._get_active_member(member_id)
@@ -47,6 +49,8 @@ class ProjectService:
         )
         if project is None:
             raise self._not_found(project_id)
+        if self.access is not None:
+            self.access.ensure_member(project.member_id)
         return project
 
     def update(self, project_id: UUID, command: ProjectUpdate) -> ProjectExperience:
@@ -73,6 +77,8 @@ class ProjectService:
         self.session.commit()
 
     def _get_active_member(self, member_id: UUID) -> Member:
+        if self.access is not None:
+            return self.access.ensure_member(member_id)
         member = self.session.scalar(
             select(Member).where(Member.id == member_id, Member.deleted_at.is_(None))
         )

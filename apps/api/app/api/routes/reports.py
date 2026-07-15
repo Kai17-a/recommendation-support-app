@@ -6,12 +6,16 @@ from sqlalchemy.orm import Session
 from app.infrastructure.database import get_session
 from app.reports.schemas import ReportCreate, ReportResponse, ReportUpdate
 from app.reports.service import ReportService
+from app.security.authentication import CurrentUser, get_current_user
+from app.security.authorization import AccessControl
 
 router = APIRouter(tags=["reports"])
 
 
-def get_report_service(session: Session = Depends(get_session)) -> ReportService:
-    return ReportService(session)
+def get_report_service(
+    session: Session = Depends(get_session), user: CurrentUser = Depends(get_current_user)
+) -> ReportService:
+    return ReportService(session, AccessControl(session, user))
 
 
 @router.get("/api/v1/projects/{project_id}/reports", response_model=list[ReportResponse])

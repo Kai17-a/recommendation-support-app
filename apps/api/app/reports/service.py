@@ -7,11 +7,13 @@ from sqlalchemy.orm import Session
 from app.core.errors import ApiError
 from app.infrastructure.models import ProjectExperience, ProjectReport
 from app.reports.schemas import ReportCreate, ReportUpdate
+from app.security.authorization import AccessControl
 
 
 class ReportService:
-    def __init__(self, session: Session) -> None:
+    def __init__(self, session: Session, access: AccessControl | None = None) -> None:
         self.session = session
+        self.access = access
 
     def list_for_project(self, project_id: UUID) -> list[ProjectReport]:
         self._project(project_id)
@@ -42,6 +44,7 @@ class ReportService:
         )
         if report is None:
             raise self._not_found(report_id)
+        self._project(report.project_experience_id)
         return report
 
     def update(self, report_id: UUID, command: ReportUpdate) -> ProjectReport:
@@ -70,6 +73,8 @@ class ReportService:
                 message="案件経験が見つかりません。",
                 details={"project_id": str(project_id)},
             )
+        if self.access is not None:
+            self.access.ensure_member(project.member_id)
         return project
 
     @staticmethod
