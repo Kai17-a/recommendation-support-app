@@ -1,12 +1,18 @@
 export default defineNuxtConfig({
   devtools: { enabled: true },
-  css: ['~/assets/css/main.css'],
+  modules: ["@nuxt/ui"],
+  components: [{ path: "~/components", pathPrefix: false }],
+  css: [
+    "~/assets/css/main.css",
+    "~/assets/css/members.css",
+    "~/assets/css/nuxt-ui.css",
+  ],
   devServer: {
-    host: '0.0.0.0',
-    port: 3000
+    host: "0.0.0.0",
+    port: 3000,
   },
   experimental: {
-    appManifest: false
+    appManifest: false,
   },
-  compatibilityDate: '2024-11-01'
-})
+  compatibilityDate: "2024-11-01",
+});

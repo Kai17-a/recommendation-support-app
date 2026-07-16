@@ -1,5 +1,0 @@
-<script setup lang="ts">
-const route = useRoute()
-const nav = [{label:'ダッシュボード',icon:'⌂',to:'/dashboard'},{label:'メンバー',icon:'♙',to:'/members'},{label:'推薦プロジェクト',icon:'✦',to:'/recommendations'},{label:'監査ログ',icon:'≡',to:'/audit'}]
-</script>
-<template><div class="app-shell"><aside class="sidebar"><div class="side-logo"><span>R</span><div>RECO<span>SUPPORT</span></div></div><p class="side-label">WORKSPACE</p><nav><NuxtLink v-for="item in nav" :key="item.to" :to="item.to" :class="{active: route.path.startsWith(item.to)}"><b>{{ item.icon }}</b>{{ item.label }}</NuxtLink></nav><p class="side-label bottom-label">SYSTEM</p><nav><NuxtLink to="/settings"><b>⚙</b>システム設定</NuxtLink></nav><div class="side-user"><div class="avatar small">田</div><div><strong>田中 恒一</strong><small>部長・マネージャー</small></div><span>···</span></div></aside><div class="main-area"><header class="topbar"><div class="crumb">推薦支援ワークスペース <span>/</span> {{ route.path === '/dashboard' ? 'ダッシュボード' : '' }}</div><div class="top-actions"><button class="icon-btn">⌕</button><button class="icon-btn">♧<i></i></button><div class="avatar">田</div></div></header><slot /></div></div></template>

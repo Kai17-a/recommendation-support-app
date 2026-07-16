@@ -1,0 +1,42 @@
+<script setup lang="ts">
+const route = useRoute();
+const projectPath = computed(
+  () => `/members/${route.params.memberId}/projects/${route.params.projectId}`,
+);
+</script>
+<template>
+  <main class="content narrow">
+    <AppBackLink :to="projectPath" label="案件詳細に戻る" />
+    <p class="eyebrow">AI PROJECT ANALYSIS</p>
+    <h1>AI案件分析</h1>
+    <p class="muted">案件報告から、推薦に活用できる事実を整理します。</p>
+    <section class="panel analysis-result">
+      <div class="analysis-header">
+        <strong>分析結果</strong><AppStatus>完了</AppStatus>
+      </div>
+      <h3>確認できた強み</h3>
+      <div class="analysis-item">
+        <b>01</b>
+        <div>
+          <strong>複雑な課題の構造化</strong>
+          <p>
+            ユーザーインタビューを起点に、決済フローの課題を整理した事実が確認できます。
+          </p>
+        </div>
+      </div>
+      <div class="analysis-item">
+        <b>02</b>
+        <div>
+          <strong>チームとの協働</strong>
+          <p>プロダクトチームと改善を進めた記録があります。</p>
+        </div>
+      </div>
+      <div class="warning">
+        <strong>⚠ 推薦文への自動反映は行いません</strong>
+        <p>
+          分析結果は事実確認のための候補です。必ず内容を確認してから利用してください。
+        </p>
+      </div>
+    </section>
+  </main>
+</template>

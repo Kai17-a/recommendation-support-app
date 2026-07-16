@@ -2,6 +2,17 @@
   "name": "recommendation-support-app",
   "private": true,
   "type": "module",
-  "scripts": {"dev": "nuxt dev", "build": "nuxt build", "generate": "nuxt generate"},
-  "devDependencies": {"nuxt": "^3.17.5"}
+  "scripts": {
+    "dev": "nuxt dev",
+    "build": "nuxt build",
+    "generate": "nuxt generate"
+  },
+  "devDependencies": {
+    "@iconify-json/lucide": "^1.2.117",
+    "@nuxt/ui": "^4.10.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "nuxt": "^4",
+    "prettier": "3.9.5",
+    "tailwindcss": "^4.3.3"
+  }
 }

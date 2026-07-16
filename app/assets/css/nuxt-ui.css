@@ -1,0 +1,19 @@
+.member-search {
+  width: 310px;
+}
+.member-department-select {
+  width: 180px;
+}
+.member-form {
+  display: grid;
+  gap: 18px;
+}
+.member-form .form-actions {
+  margin-top: 8px;
+}
+@media (max-width: 650px) {
+  .member-search,
+  .member-department-select {
+    width: 100%;
+  }
+}
