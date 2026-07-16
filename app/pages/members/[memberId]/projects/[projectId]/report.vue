@@ -5,6 +5,7 @@ const projectPath = computed(
 );
 const saved = ref(false);
 const reportType = ref("終了報告");
+const reportTypeOptions = ["終了報告", "定期報告"];
 const report = ref(
   "ユーザーインタビューを通じて課題を整理し、決済フローを再設計しました。チームと協働し、初回利用者の完了率改善につなげました。",
 );
@@ -22,14 +23,12 @@ async function saveReport() {
     <h1>案件報告を編集</h1>
     <p class="muted">決済プロダクト リニューアル</p>
     <form class="panel form-panel" @submit.prevent="saveReport">
-      <label
-        >報告種別<select v-model="reportType">
-          <option>終了報告</option>
-          <option>定期報告</option>
-        </select></label
-      ><label
-        >報告内容<textarea v-model="report" rows="10" required></textarea>
-      </label>
+      <UFormField label="報告種別">
+        <USelect v-model="reportType" :items="reportTypeOptions" />
+      </UFormField>
+      <UFormField label="報告内容" required>
+        <UTextarea v-model="report" rows="10" required />
+      </UFormField>
       <AppFormActions>
         <NuxtLink :to="projectPath" class="secondary">キャンセル</NuxtLink
         ><UButton type="submit" label="保存する" :loading="isPending" />

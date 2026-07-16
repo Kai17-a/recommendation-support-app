@@ -12,21 +12,18 @@ async function login() {
   <main class="simple-login">
     <form class="simple-login-card" @submit.prevent="login">
       <h1>ログイン</h1>
-      <label
-        >メールアドレス<input
-          v-model="email"
-          type="email"
-          autocomplete="email"
-          required /></label
-      ><label
-        >パスワード<input
+      <UFormField label="メールアドレス" required>
+        <UInput v-model="email" type="email" autocomplete="email" required />
+      </UFormField>
+      <UFormField label="パスワード" required>
+        <UInput
           v-model="password"
           type="password"
           autocomplete="current-password"
-          required /></label
-      ><button class="primary full" type="submit" :disabled="isPending">
-        {{ isPending ? "ログイン中..." : "ログイン" }}
-      </button>
+          required
+        />
+      </UFormField>
+      <UButton type="submit" block :loading="isPending" label="ログイン" />
     </form>
   </main>
 </template>

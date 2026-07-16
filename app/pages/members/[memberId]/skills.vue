@@ -45,17 +45,12 @@ function cancelSkill() {
       class="panel form-panel"
       @submit.prevent="saveSkill"
     >
-      <label
-        >スキル名<input
-          v-model="skill"
-          required
-          placeholder="例: ユーザーリサーチ" /></label
-      ><label
-        >登録理由<textarea
-          rows="3"
-          placeholder="根拠となる案件経験や評価を入力"
-        ></textarea>
-      </label>
+      <UFormField label="スキル名" required>
+        <UInput v-model="skill" required placeholder="例: ユーザーリサーチ" />
+      </UFormField>
+      <UFormField label="登録理由">
+        <UTextarea rows="3" placeholder="根拠となる案件経験や評価を入力" />
+      </UFormField>
       <AppFormActions>
         <UButton
           label="キャンセル"

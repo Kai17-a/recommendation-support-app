@@ -20,29 +20,31 @@ async function saveProject() {
     <p class="eyebrow">NEW PROJECT</p>
     <h1>案件経験を追加</h1>
     <form class="panel form-panel" @submit.prevent="saveProject">
-      <label
-        >案件名<input
+      <UFormField label="案件名" required>
+        <UInput
           v-model="project.name"
           required
-          placeholder="例: 新規決済機能の設計" /></label
-      ><label
-        >期間<input
+          placeholder="例: 新規決済機能の設計"
+        />
+      </UFormField>
+      <UFormField label="期間" required>
+        <UInput
           v-model="project.period"
           required
-          placeholder="例: 2026年4月 — 2026年9月" /></label
-      ><label
-        >役割<input
-          v-model="project.role"
-          required
-          placeholder="担当した役割" /></label
-      ><label
-        >概要<textarea
+          placeholder="例: 2026年4月 — 2026年9月"
+        />
+      </UFormField>
+      <UFormField label="役割" required>
+        <UInput v-model="project.role" required placeholder="担当した役割" />
+      </UFormField>
+      <UFormField label="概要" required>
+        <UTextarea
           v-model="project.description"
           rows="5"
           required
           placeholder="案件の概要と成果"
-        ></textarea>
-      </label>
+        />
+      </UFormField>
       <AppFormActions>
         <NuxtLink :to="projectsPath" class="secondary">キャンセル</NuxtLink
         ><UButton type="submit" label="案件経験を登録" :loading="isPending" />

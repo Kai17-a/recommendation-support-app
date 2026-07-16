@@ -1,3 +1,8 @@
+<script setup lang="ts">
+const period = ref("過去30日");
+const periodOptions = ["過去7日", "過去30日", "過去90日"];
+</script>
+
 <template>
   <main class="content">
     <AppPageHeader
@@ -5,9 +10,11 @@
       title="監査ログ"
       description="ワークスペースで行われた変更の履歴です。"
       ><template #actions
-        ><button class="filter">期間：過去30日　⌄</button></template
-      ></AppPageHeader
-    >
+        ><USelect
+          v-model="period"
+          :items="periodOptions"
+          aria-label="監査ログの期間を選択" /></template
+    ></AppPageHeader>
     <section class="panel table-panel">
       <div
         class="table-head"

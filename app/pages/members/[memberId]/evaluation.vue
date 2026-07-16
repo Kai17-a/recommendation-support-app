@@ -47,15 +47,17 @@ function cancelEvaluation() {
       class="panel form-panel"
       @submit.prevent="saveEvaluation"
     >
-      <label>評価期間<input v-model="evaluation.period" required /></label
-      ><label
-        >評価内容<textarea
+      <UFormField label="評価期間" required>
+        <UInput v-model="evaluation.period" required />
+      </UFormField>
+      <UFormField label="評価内容" required>
+        <UTextarea
           v-model="evaluation.comment"
           rows="4"
           required
           placeholder="確認できた行動や成果を入力"
-        ></textarea>
-      </label>
+        />
+      </UFormField>
       <AppFormActions>
         <UButton
           label="キャンセル"

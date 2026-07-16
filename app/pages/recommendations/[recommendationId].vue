@@ -52,7 +52,7 @@ async function regenerateDraft() {
             {{ isPending ? "再生成中..." : "✦ AIで再生成" }}
           </button>
         </div>
-        <textarea v-model="text"></textarea>
+        <UTextarea v-model="text" class="editor-textarea" autoresize />
         <div class="editor-foot">
           <span class="muted">AI生成部分を含みます　·　1,284文字</span
           ><AppStatus tone="orange">⚠ 1件の警告</AppStatus>

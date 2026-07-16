@@ -19,6 +19,7 @@ const users = ref([
     initial: "伊",
   },
 ]);
+const departmentOptions = ["Fintech事業部", "Platform部", "新規事業部"];
 const { isPending, run } = useMockAction();
 async function sendInvite() {
   const submittedInvite = { ...invite.value };
@@ -58,24 +59,20 @@ function cancelInvite() {
       class="panel form-panel"
       @submit.prevent="sendInvite"
     >
-      <label
-        >氏名<input
-          v-model="invite.name"
-          required
-          placeholder="例: 佐々木 亮" /></label
-      ><label
-        >メールアドレス<input
+      <UFormField label="氏名" required>
+        <UInput v-model="invite.name" required placeholder="例: 佐々木 亮" />
+      </UFormField>
+      <UFormField label="メールアドレス" required>
+        <UInput
           v-model="invite.email"
           type="email"
           required
-          placeholder="name@acme.co.jp" /></label
-      ><label
-        >所属部署<select v-model="invite.department">
-          <option>Fintech事業部</option>
-          <option>Platform部</option>
-          <option>新規事業部</option>
-        </select></label
-      >
+          placeholder="name@acme.co.jp"
+        />
+      </UFormField>
+      <UFormField label="所属部署">
+        <USelect v-model="invite.department" :items="departmentOptions" />
+      </UFormField>
       <AppFormActions>
         <UButton
           label="キャンセル"

@@ -2,6 +2,10 @@
 const created = ref(false);
 const createdId = ref("");
 const { isPending, run } = useMockAction();
+const memberOptions = [
+  "鈴木 恒一 — Senior Product Designer",
+  "山本 美咲 — Frontend Engineer",
+];
 const recommendation = ref({
   member: "鈴木 恒一 — Senior Product Designer",
   purpose: "",
@@ -22,28 +26,30 @@ async function createRecommendation() {
     <h1>推薦プロジェクトをはじめる</h1>
     <p class="muted">推薦したいメンバーと、推薦の目的を教えてください。</p>
     <form class="panel form-panel" @submit.prevent="createRecommendation">
-      <label
-        >推薦対象<select v-model="recommendation.member">
-          <option>鈴木 恒一 — Senior Product Designer</option>
-          <option>山本 美咲 — Frontend Engineer</option>
-        </select></label
-      ><label
-        >推薦の目的<input
+      <UFormField label="推薦対象">
+        <USelect v-model="recommendation.member" :items="memberOptions" />
+      </UFormField>
+      <UFormField label="推薦の目的" required>
+        <UInput
           v-model="recommendation.purpose"
           required
-          placeholder="例: Fintechプロダクト責任者への推薦" /></label
-      ><label
-        >推薦先<input
+          placeholder="例: Fintechプロダクト責任者への推薦"
+        />
+      </UFormField>
+      <UFormField label="推薦先" required>
+        <UInput
           v-model="recommendation.target"
           required
-          placeholder="推薦先の役職・企業など" /></label
-      ><label
-        >強調したいポイント<textarea
+          placeholder="推薦先の役職・企業など"
+        />
+      </UFormField>
+      <UFormField label="強調したいポイント">
+        <UTextarea
           v-model="recommendation.emphasis"
           rows="4"
           placeholder="この推薦で特に伝えたいこと"
-        ></textarea>
-      </label>
+        />
+      </UFormField>
       <AppFormActions>
         <NuxtLink to="/recommendations" class="secondary">キャンセル</NuxtLink
         ><UButton

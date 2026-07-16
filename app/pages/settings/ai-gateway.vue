@@ -32,14 +32,19 @@ async function saveSettings() {
       <p class="muted section-note">
         AI Gateway 経由で接続します。APIキーは画面上に表示されません。
       </p>
-      <label>Base URL<input v-model="config.baseUrl" required /></label
-      ><label>APIキー<input v-model="apiKey" type="password" required /></label>
-      <label
-        >既定モデル<input
+      <UFormField label="Base URL" required>
+        <UInput v-model="config.baseUrl" required />
+      </UFormField>
+      <UFormField label="APIキー" required>
+        <UInput v-model="apiKey" type="password" required />
+      </UFormField>
+      <UFormField label="既定モデル" required>
+        <UInput
           v-model="config.model"
           required
           placeholder="例: claude-3-7-sonnet"
-      /></label>
+        />
+      </UFormField>
       <AppFormActions>
         <UButton
           type="button"

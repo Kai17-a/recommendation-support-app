@@ -1,6 +1,7 @@
 <script setup lang="ts">
 const route = useRoute();
 const memberId = computed(() => String(route.params.memberId));
+const members = useMembersMock();
 const profiles: Record<
   string,
   {
@@ -54,7 +55,23 @@ const profiles: Record<
     projectCount: 2,
   },
 };
-const member = computed(() => profiles[memberId.value] ?? profiles.suzuki);
+const member = computed(() => {
+  const profile = profiles[memberId.value];
+  if (profile) return profile;
+
+  const registeredMember = members.value.find(
+    (item) => item.id === memberId.value,
+  );
+  if (registeredMember) {
+    return {
+      ...registeredMember,
+      initial: registeredMember.name[0],
+      projectCount: registeredMember.projects,
+    };
+  }
+
+  return profiles.suzuki;
+});
 const basePath = computed(() => `/members/${memberId.value}`);
 const tabs = computed(() => [
   { label: "概要", to: basePath.value },
@@ -110,8 +127,12 @@ async function saveProfile() {
       class="panel form-panel"
       @submit.prevent="saveProfile"
     >
-      <label>役割<input v-model="editableProfile.role" required /></label>
-      <label>部署<input v-model="editableProfile.department" required /></label>
+      <UFormField label="役割" required>
+        <UInput v-model="editableProfile.role" required />
+      </UFormField>
+      <UFormField label="部署" required>
+        <UInput v-model="editableProfile.department" required />
+      </UFormField>
       <AppFormActions>
         <UButton
           label="キャンセル"

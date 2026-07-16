@@ -1,9 +1,25 @@
 <script setup lang="ts">
+const query = ref("");
+const status = ref("すべてのステータス");
+const statusOptions = [
+  "すべてのステータス",
+  "下書き",
+  "レビュー中",
+  "確定済み",
+];
 const items = [
   ["鈴木 恒一", "Fintech事業部 / プロダクトデザイン責任者", "下書き", "blue"],
   ["山本 美咲", "Platform部 / Engineering Manager", "レビュー中", "orange"],
   ["佐藤 健", "新規事業部 / VP of Product", "確定済み", "green"],
 ];
+const filteredItems = computed(() => {
+  const keyword = query.value.trim().toLowerCase();
+  return items.filter(
+    ([name, description, itemStatus]) =>
+      (!keyword || `${name} ${description}`.toLowerCase().includes(keyword)) &&
+      (status.value === "すべてのステータス" || status.value === itemStatus),
+  );
+});
 </script>
 <template>
   <main class="content">
@@ -19,12 +35,21 @@ const items = [
       >
     </AppPageHeader>
     <div class="toolbar">
-      <div class="search">⌕ <input placeholder="プロジェクトを検索" /></div>
-      <button class="filter">すべてのステータス　⌄</button>
+      <UInput
+        v-model="query"
+        icon="i-lucide-search"
+        placeholder="プロジェクトを検索"
+        aria-label="推薦プロジェクトを検索"
+      />
+      <USelect
+        v-model="status"
+        :items="statusOptions"
+        aria-label="ステータスで絞り込む"
+      />
     </div>
     <div class="rec-grid">
       <NuxtLink
-        v-for="i in items"
+        v-for="i in filteredItems"
         to="/recommendations/1"
         class="panel rec-card"
         ><div class="rec-top">
@@ -37,6 +62,10 @@ const items = [
           <span>最終更新 2時間前</span><span>→</span>
         </div></NuxtLink
       >
+    </div>
+    <div v-if="filteredItems.length === 0" class="member-empty">
+      <strong>条件に一致する推薦プロジェクトはありません</strong>
+      <p>検索キーワードまたはステータスの条件を変更してください。</p>
     </div>
   </main>
 </template>

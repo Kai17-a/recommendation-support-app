@@ -7,9 +7,6 @@ const { isPending, run } = useMockAction();
 const projectPath = computed(
   () => `/members/${route.params.memberId}/projects/${route.params.projectId}`,
 );
-function selectFile(event: Event) {
-  selectedFile.value = (event.target as HTMLInputElement).files?.[0] ?? null;
-}
 async function importMarkdown() {
   if (!selectedFile.value) return;
   await run(() => {
@@ -24,25 +21,21 @@ async function importMarkdown() {
     <h1>Markdown取り込み</h1>
     <p class="muted">報告ファイルから案件情報とスキル候補を抽出します。</p>
     <section class="panel form-panel">
-      <label>対象メンバー<input value="鈴木 恒一" disabled /></label
-      ><label
-        >対象案件<input value="決済プロダクト リニューアル" disabled
-      /></label>
-      <label class="upload">
-        <input type="file" accept=".md,text/markdown" @change="selectFile" />
-        {{ selectedFile ? selectedFile.name : "＋　Markdownファイルを選択" }}
-        <div>
-          {{
-            selectedFile
-              ? "解析するファイルを選択済み"
-              : ".md ファイルをここにドロップ"
-          }}
-        </div>
-      </label>
-      <label class="check"
-        ><input v-model="keepSource" type="checkbox" />
-        元ファイルを保存する</label
-      >
+      <UFormField label="対象メンバー">
+        <UInput value="鈴木 恒一" disabled />
+      </UFormField>
+      <UFormField label="対象案件">
+        <UInput value="決済プロダクト リニューアル" disabled />
+      </UFormField>
+      <UFormField label="Markdownファイル" required>
+        <UFileUpload
+          v-model="selectedFile"
+          accept=".md,text/markdown"
+          label="Markdownファイルを選択"
+          description=".md ファイルをここにドロップ"
+        />
+      </UFormField>
+      <UCheckbox v-model="keepSource" label="元ファイルを保存する" />
       <AppFormActions>
         <NuxtLink :to="projectPath" class="secondary">キャンセル</NuxtLink
         ><UButton

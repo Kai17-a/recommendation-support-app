@@ -15,41 +15,41 @@
 
 部署階層を管理する。
 
-| カラム | 型 | 必須 | 説明 |
-|---|---|---:|---|
-| id | uuid | Yes | 主キー |
-| parent_id | uuid | No | 親部署 |
-| name | varchar | Yes | 部署名 |
-| code | varchar | Yes | 部署コード |
-| created_at | timestamp | Yes | 作成日時 |
-| updated_at | timestamp | Yes | 更新日時 |
+| カラム     | 型        | 必須 | 説明       |
+| ---------- | --------- | ---: | ---------- |
+| id         | uuid      |  Yes | 主キー     |
+| parent_id  | uuid      |   No | 親部署     |
+| name       | varchar   |  Yes | 部署名     |
+| code       | varchar   |  Yes | 部署コード |
+| created_at | timestamp |  Yes | 作成日時   |
+| updated_at | timestamp |  Yes | 更新日時   |
 
 ### users
 
 システム利用者を管理する。
 
-| カラム | 型 | 必須 | 説明 |
-|---|---|---:|---|
-| id | uuid | Yes | 主キー |
-| department_id | uuid | Yes | 所属部署 |
-| name | varchar | Yes | 氏名 |
-| email | varchar | Yes | ログイン識別子 |
-| role | enum | Yes | manager / system_operator |
-| status | enum | Yes | active / inactive |
+| カラム        | 型      | 必須 | 説明                      |
+| ------------- | ------- | ---: | ------------------------- |
+| id            | uuid    |  Yes | 主キー                    |
+| department_id | uuid    |  Yes | 所属部署                  |
+| name          | varchar |  Yes | 氏名                      |
+| email         | varchar |  Yes | ログイン識別子            |
+| role          | enum    |  Yes | manager / system_operator |
+| status        | enum    |  Yes | active / inactive         |
 
 ### members
 
 推薦対象となるメンバーを管理する。
 
-| カラム | 型 | 必須 | 説明 |
-|---|---|---:|---|
-| id | uuid | Yes | 主キー |
-| department_id | uuid | Yes | 所属部署 |
-| manager_user_id | uuid | Yes | 管理上司 |
-| name | varchar | Yes | 氏名 |
-| status | enum | Yes | active / inactive / retired |
-| deleted_at | timestamp | No | 論理削除日時 |
-| deleted_by | uuid | No | 削除者 |
+| カラム          | 型        | 必須 | 説明                        |
+| --------------- | --------- | ---: | --------------------------- |
+| id              | uuid      |  Yes | 主キー                      |
+| department_id   | uuid      |  Yes | 所属部署                    |
+| manager_user_id | uuid      |  Yes | 管理上司                    |
+| name            | varchar   |  Yes | 氏名                        |
+| status          | enum      |  Yes | active / inactive / retired |
+| deleted_at      | timestamp |   No | 論理削除日時                |
+| deleted_by      | uuid      |   No | 削除者                      |
 
 ### project_experiences
 
